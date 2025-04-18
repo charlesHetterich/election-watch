@@ -1,6 +1,4 @@
 import nodemailer from "nodemailer";
-
-// `dot` is the name we gave to `npx papi add`
 import { dot } from "@polkadot-api/descriptors";
 import { createClient } from "polkadot-api";
 import { getSmProvider } from "polkadot-api/sm-provider";
