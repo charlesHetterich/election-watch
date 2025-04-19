@@ -11,16 +11,16 @@ RUN apk add --no-cache bash
 COPY package*.json ./
 
 # Install dependencies
+RUN npm i polkadot-api
+RUN npx papi add dot -n polkadot && npx papi
+
 RUN npm install
 
 # Copy the rest of the application
 COPY . .
 
-# Generate TypeScript types for Polkadot-API
-RUN npx papi add dot -n polkadot && npx papi
-
-# Expose application port (adjust as necessary)
-EXPOSE 3000
-
 # Command to run the application
-CMD ["npm", "run", "start"]
+RUN npm i -D tsx
+CMD ["npx", "tsx", "src/index.ts"]
+
+

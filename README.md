@@ -4,6 +4,21 @@ Super light weight app to run as a free fly.io session that watches for phase ch
 
 Currently this simply sends an email. In the future I would like this to trigger a slightly larger process to download the election snapshot and add it to a huggingface dataset. For right now, I am the slightly larger process (aka manual style).
 
-In the future this will also spin up & shut down a server to calculate & submit my solutions.
+**Later** this will also spin up & shut down a server to calculate & submit solutions.
 
-*An interesting slightly more ambitious idea in the future could be to to use this concept to build a general 'lambda' type SaaS that triggers lambda functions on any polkadot event*
+_An interesting slightly more ambitious idea in the future could be to to use this concept to build a general 'lambda' type SaaS that triggers lambda functions on any polkadot event_
+
+## Setup
+
+```
+brew install flyctl
+```
+
+<br>
+
+This will prompt you to login and requires you to connect your credit card. _I think_ that I've set up the settings s.t. you won't be charged anything.
+
+```bash
+fly launch -y
+fly scale count 1 -y
+```

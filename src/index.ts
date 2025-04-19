@@ -6,12 +6,6 @@ import { chainSpec } from "polkadot-api/chains/polkadot";
 import { start } from "polkadot-api/smoldot";
 import dotenv from "dotenv";
 
-// setup PAPI
-const smoldot = start();
-const chain = await smoldot.addChain({ chainSpec });
-const client = createClient(getSmProvider(chain));
-const papi = client.getTypedApi(dot);
-
 // setup gmail access
 dotenv.config();
 const EMAIL = process.env.EMAIL;
@@ -60,7 +54,23 @@ function sendToEmail(content: any) {
   });
 }
 
-// listen for phase transitions
-papi.event.ElectionProviderMultiPhase.PhaseTransitioned.watch(
-  (data) => true
-).forEach(sendToEmail);
+async function main() {
+  // setup PAPI
+  const smoldot = start();
+  const chain = await smoldot.addChain({ chainSpec });
+  const client = createClient(getSmProvider(chain));
+  const papi = client.getTypedApi(dot);
+
+  // listen for phase transitions
+  papi.event.ElectionProviderMultiPhase.PhaseTransitioned.watch(
+    (data) => true
+  ).forEach(sendToEmail);
+}
+
+main()
+  .then(() => {
+    console.log("Listening for events...");
+  })
+  .catch((error) => {
+    console.error("Error:", error);
+  });
