@@ -1,102 +1,45 @@
-import nodemailer from "nodemailer";
 import { dot } from "@polkadot-api/descriptors";
 import { createClient } from "polkadot-api";
 import { getSmProvider } from "polkadot-api/sm-provider";
 import { chainSpec } from "polkadot-api/chains/polkadot";
 import { start } from "polkadot-api/smoldot";
-import dotenv from "dotenv";
-
-import { SUBSTRATE_LAMBDAS } from "./titles";
-import fs from "fs";
-import path from "path";
 import chalk from "chalk";
 
+import { loadApps } from "./app-loader";
+import { SUBSTRATE_LAMBDAS } from "./titles";
+
 console.log(SUBSTRATE_LAMBDAS);
-const description = `
-listens for changes in npos election phases on the polkadot network and send an email to yourself, configured in the .env file.
-`;
-
-// Print "Apps Running:" in red and list app names in green
-const appsDir = path.join(__dirname, "./apps");
-if (fs.existsSync(appsDir)) {
-  const appNames = fs
-    .readdirSync(appsDir, { withFileTypes: true })
-    .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => dirent.name);
-
-  console.log(chalk.red("Apps Running:"));
-  appNames.forEach((appName) => {
-    console.log(`\n${chalk.green(appName)}${chalk.grey(description)}`);
-  });
-} else {
-  console.log(chalk.red("Apps directory not found."));
-}
-
-// setup gmail access
-dotenv.config();
-const EMAIL = process.env.EMAIL;
-const PASSWORD = process.env.PASSWORD;
-if (!EMAIL || !PASSWORD) {
-  throw new Error("EMAIL and PASSWORD must be set in the .env file");
-}
-const gmailAcc = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: EMAIL,
-    pass: PASSWORD,
-  },
-});
-
-/**
- * Sends data to the specified email address.
- *
- * @param {any} content - The content to be sent in the email.
- * @returns {void}
- */
-function sendToEmail(content: any) {
-  const dataString =
-    typeof content === "object" && content !== null
-      ? JSON.stringify(
-          content,
-          (key, value) =>
-            typeof value === "bigint" ? value.toString() : value,
-          2
-        )
-      : String(content);
-
-  const mailOptions = {
-    from: EMAIL,
-    to: EMAIL,
-    subject: "DELIVERY HONK",
-    text: dataString,
-  };
-
-  gmailAcc.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error("Error sending email:", error);
-    } else {
-      console.log("Email sent:", info.response);
-    }
-  });
-}
 
 async function main() {
-  // setup PAPI
-  const smoldot = start();
-  const chain = await smoldot.addChain({ chainSpec });
-  const client = createClient(getSmProvider(chain));
-  const papi = client.getTypedApi(dot);
+    // Setup PAPI
+    const smoldot = start();
+    const chain = await smoldot.addChain({ chainSpec });
+    const client = createClient(getSmProvider(chain));
+    const papi = client.getTypedApi(dot);
 
-  // listen for phase transitions
-  papi.event.ElectionProviderMultiPhase.PhaseTransitioned.watch(
-    (data) => true
-  ).forEach(sendToEmail);
+    // Load apps
+    const apps = loadApps(papi);
+    console.log("\n" + chalk.red("Apps Running:"));
+    apps.forEach((app) => {
+        // Log information about each app
+        console.log(
+            "\n" +
+                chalk.green(app.appName) +
+                "\t" +
+                chalk.white.bold("watching ") +
+                chalk.grey(app.watching.name)
+        );
+        console.log(chalk.grey(app.description) + "\n");
+
+        // Launch app listener
+        app.watching.call(app.trigger).forEach(app.lambda);
+    });
 }
 
 main()
-  .then(() => {
-    console.log("Listening for events...");
-  })
-  .catch((error) => {
-    console.error("Error:", error);
-  });
+    .then(() => {
+        console.log("Listening for events...");
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+    });
