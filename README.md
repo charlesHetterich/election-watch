@@ -7,7 +7,7 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 
 ### Repository Goals
 
-**(1)** Provide developers with a platform to rapidly develop & easily deploy *lambda* style applications which follow a standardized design pattern.
+**(1)** Provide developers with a platform to rapidly develop & easily deploy *lambda* style applications which follow a standardized design pattern & set of tools. One important tool will be the ability to launch remote workers across various cloud providers.
 
 **(2)** Provide users with platform to easily plug-n-play various *"apps"* or *"plugins"* built by developers
 
