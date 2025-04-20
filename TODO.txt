@@ -1,0 +1,9 @@
+- Generalize to allow apps on any chain (currently polkadot relay-chain is hardcoded several places)
+
+- Detect apps listening to the same chain/event & batch those processes together (listen once and call all relevant callbacks)
+
+- Allow single apps to listen across multiple events
+
+- Add Typing toolage that makes the data types in `lambda` and `trigger` less verbose on the side of the app developer
+
+- Design such that we can decouple actual apps from this repository, and allow nice "plug-n-play" capability to choose various apps (a.t.m. this is basically a personal repo running my own apps)
