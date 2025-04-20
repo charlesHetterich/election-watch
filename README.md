@@ -1,12 +1,17 @@
 ![Title](./res/ex1.png)
 
-Super light weight app to run as a free fly.io session that watches for phase changes in polkadot election cycles.
+Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening for ***\<trigger\>*** is *computationally inexpensive* but requires **something to always be on**. Doing ***\<thing\>*** may be *computationally expensive* but only requires **on-demand compute**.
 
-Currently this simply sends an email. In the future I would like this to trigger a slightly larger process to download the election snapshot and add it to a huggingface dataset. For right now, I am the slightly larger process (aka manual style).
+> *Everyone* should have something between a raspberry-pi and a router plugged into their wall at home. This may enable pretty complex background dapps (ex: DCA'ing on AssetHub) which require no signing, since actions taken on your behalf are being run from your local, trusted machine.
 
-**Later** this will also spin up & shut down a server to calculate & submit solutions.
 
-_An interesting slightly more ambitious idea in the future could be to to use this concept to build a general 'lambda' type SaaS that triggers lambda functions on any polkadot event_
+### Repository Goals
+
+**(1)** Provide developers with a platform to rapidly develop & easily deploy *lambda* style applications which follow a standardized design pattern.
+
+**(2)** Provide users with platform to easily plug-n-play various *"apps"* or *"plugins"* built by developers
+
+**(3)** Be as lightweight as possible
 
 # Setup
 run locally with `npx tsx src/index.ts`
@@ -32,6 +37,14 @@ fly apps destroy election-watch
 <br><br>
 
 # Apps
+### Application Design Pattern
+Listen for trigger events, which then:
+- Perform some extremely lightweight work **OR**
+- Spin up a remote worker which does heavier processing
+
+
+<br><br>
+
 ### *Election Watch*
 Super light weight app to run as a free fly.io session that watches for phase changes in polkadot election cycles.
 
