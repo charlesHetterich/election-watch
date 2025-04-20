@@ -49,7 +49,7 @@ export async function aggData(api: TypedApi<typeof dot>) {
     saveEraData(currentEra - 1, "label", label);
 
     console.log("[3] uploading data...");
-    const command = `python ${__dirname}/pushData.py ./out`;
+    const command = `python ${__dirname}/pushData.py ./out "[lambda] publish era ${currentEra}"`;
     try {
         const output = execSync(command, { stdio: "inherit" });
         console.log("Command executed successfully:", command);

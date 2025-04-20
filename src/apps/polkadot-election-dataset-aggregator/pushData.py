@@ -16,8 +16,8 @@ api = HfApi()
 
 if __name__ == "__main__":
     # Validate args
-    if len(sys.argv) != 2:
-        print("Usage: python pushData.py <data-dir>")
+    if 1 < len(sys.argv) < 4:
+        print("Usage: python pushData.py <data-dir> <commit-message>")
         sys.exit(1)
 
     # Push data to HF dataset
@@ -25,5 +25,6 @@ if __name__ == "__main__":
         folder_path=sys.argv[1],
         path_in_repo=f"data",
         repo_id=repo_name,
-        repo_type="dataset"
+        repo_type="dataset",
+        commit_message=sys.argv[2] if len(sys.argv) == 3 else None,
     )
