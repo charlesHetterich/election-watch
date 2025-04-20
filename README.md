@@ -34,11 +34,12 @@ This will prompt you to login and requires you to connect your credit card. _I t
 
 ```bash
 # launch
-fly apps create election-watch
+fly apps create substrate-lambdas
 fly deploy
+fly scale count 1 -y # scale downn to single node
 
 # shut down
-fly apps destroy election-watch
+fly apps destroy substrate-lambdas -y
 ```
 
 <br><br>

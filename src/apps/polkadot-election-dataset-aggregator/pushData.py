@@ -16,7 +16,7 @@ api = HfApi()
 
 if __name__ == "__main__":
     # Validate args
-    if 1 < len(sys.argv) < 4:
+    if not (1 < len(sys.argv) < 4):
         print("Usage: python pushData.py <data-dir> <commit-message>")
         sys.exit(1)
 

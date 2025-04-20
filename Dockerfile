@@ -1,3 +1,5 @@
+# TODO! decouple this from app dependencies
+
 # Use Node.js 20.x LTS Alpine image
 FROM node:20-alpine
 
@@ -5,7 +7,12 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install system dependencies
-RUN apk add --no-cache bash
+RUN apk add --no-cache bash python3 py3-pip
+
+# Install python dependencies
+RUN python3 -m venv /venv
+ENV PATH="/venv/bin:$PATH"
+RUN pip install huggingface_hub
 
 # Copy package.json and package-lock.json (or yarn.lock)
 COPY package*.json ./
@@ -22,5 +29,3 @@ COPY . .
 # Command to run the application
 RUN npm i -D tsx
 CMD ["npx", "tsx", "src/index.ts"]
-
-
