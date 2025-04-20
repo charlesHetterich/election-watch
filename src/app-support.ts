@@ -1,20 +1,34 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { TypedApi } from "polkadot-api";
+import { ChainDefinition, TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
 
 const appsDir = path.join(__dirname, "./apps");
 
 /**
- * Captures the call to the event we are watching as well as relevant metadata
+ * Wrapper around an `observable` we would like to watch
  */
 class Watching {
+    /**
+     * The `observable` we intend to watch
+     */
     call: Function;
+
+    /**
+     * The name of the observable givenn by its call path
+     */
     name: String;
+
+    /**
+     * Configure new watching
+     *
+     * @param callPth The call path to an `observable`. *e.x: `"event.ElectionProviderMultiPhase.PhaseTransitioned"`*
+     * @param api PAPI light client.
+     */
     constructor(callPth: string, api: TypedApi<typeof dot>) {
         const pth_arr = callPth.split(".");
-        let call: any = api;
+        let call: any = api; // TODO! remove any
         for (const pth of pth_arr) {
             call = call[pth];
         }
@@ -24,14 +38,42 @@ class Watching {
 }
 
 /**
- * Stores app metadata
+ * Stores lambda app configuration
  */
 export class LambdaApp {
+    /**
+     * The name of the app, given by the directory name
+     */
     appName: String;
+
+    /**
+     * The description of the app, given by the description field in the app
+     */
     description: String;
+
+    /**
+     * Configuration for the `observable` being watched
+     */
     watching: Watching;
+
+    /**
+     * Filters instances of the event we are watching. Triggers `this.lambda` when true is returned
+     * TODO! specify type better
+     */
     trigger: Function;
+
+    /**
+     * The work to do after `this.trigger` fires
+     * TODO! specify type better
+     */
     lambda: Function;
+
+    /**
+     * Configure new lambda app
+     *
+     * @param appName The name of the app with we attempt to import
+     * @param api PAPI light client.
+     */
     constructor(appName: string, api: TypedApi<typeof dot>) {
         const app = require(path.join(appsDir, appName, "index.ts"));
         this.appName = appName;
@@ -40,6 +82,13 @@ export class LambdaApp {
         this.trigger = app.trigger;
         this.lambda = app.lambda;
     }
+}
+
+/**
+ * Provides system context to lambda apps
+ */
+export class Context<T extends ChainDefinition> {
+    constructor(public api: TypedApi<T>) {}
 }
 
 /**

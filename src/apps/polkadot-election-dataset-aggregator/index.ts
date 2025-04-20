@@ -1,6 +1,6 @@
 import { dot } from "@polkadot-api/descriptors";
 
-import { Context } from "../../index";
+import { Context } from "../../app-support";
 import { aggData } from "./aggData";
 
 export const watching = "event.ElectionProviderMultiPhase.PhaseTransitioned";
@@ -12,7 +12,7 @@ Data is downloaded locally, uploaded to Huggingface, and then deleted from local
 `;
 
 /**
- * Trigger when `Signed` phase begins. This should trigger once per era.
+ * Triggers when `Signed` phase begins. This should trigger once per era.
  */
 export function trigger(
     transition: typeof dot.descriptors.pallets.__event.ElectionProviderMultiPhase.PhaseTransitioned._type,

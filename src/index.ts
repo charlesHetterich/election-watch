@@ -5,14 +5,10 @@ import { chainSpec } from "polkadot-api/chains/polkadot"; // Can select other ch
 import { start } from "polkadot-api/smoldot";
 import chalk from "chalk";
 
-import { loadApps } from "./app-loader";
+import { loadApps, Context } from "./app-support";
 import { SUBSTRATE_LAMBDAS } from "./titles";
 
 console.log(SUBSTRATE_LAMBDAS);
-
-export class Context<T extends ChainDefinition> {
-    constructor(public api: TypedApi<T>) {}
-}
 
 async function main() {
     // Setup PAPI

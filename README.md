@@ -1,8 +1,14 @@
 ![Title](./res/thumbnail.png)
 
-Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening for ***\<trigger\>*** is *computationally inexpensive* but requires **something to always be on**. Doing ***\<thing\>*** may be *computationally expensive* but only requires **on-demand compute**.
+Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening for ***\<trigger\>*** is *computationally inexpensive* but requires **something to always be on**. Doing ***\<thing\>*** may be *computationally expensive* but only requires **on-demand availability**.
 
-> *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on & connected to the internet). I feel like this product should be pretty feasible. My hope is this may enable pretty complex background dapps (ex: DCA'ing on AssetHub) which require no signing, since actions taken on your behalf are being run from your local, trusted machine.
+> *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). I feel like this product should be pretty feasible.
+>
+>My hope is this may enable pretty complex background dapps 
+> - DCA'ing on AssetHub 
+> - Pay for & launch external GPU-server workloads
+>
+>which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 
 ### Repository Goals
 
@@ -12,7 +18,7 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 
 **(3)** Be as lightweight as possible
 
-**(4)** Be as readable as possible for a layperson. *Code is truth— no process is trustless unless you personally can read the code.*
+**(4)** Be as readable as possible for a layperson (both core & app code). *Code is truth— no process is trustless unless you personally can read the code.*
 
 # Setup
 run locally with `npx tsx src/index.ts`
