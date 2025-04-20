@@ -37,7 +37,7 @@ fly apps destroy election-watch
 <br><br>
 
 # Apps
-Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the following for variables defined:
+Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the following four variables defined:
 
 ```ts
 export const watching = "event.Something.ImWatching";
