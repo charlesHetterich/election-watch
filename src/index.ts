@@ -6,9 +6,31 @@ import { chainSpec } from "polkadot-api/chains/polkadot";
 import { start } from "polkadot-api/smoldot";
 import dotenv from "dotenv";
 
-import { SUBSTRATE_EVENT_LAMBDAS } from "./titles";
+import { SUBSTRATE_LAMBDAS } from "./titles";
+import fs from "fs";
+import path from "path";
+import chalk from "chalk";
 
-console.log(SUBSTRATE_EVENT_LAMBDAS);
+console.log(SUBSTRATE_LAMBDAS);
+const description = `
+listens for changes in npos election phases on the polkadot network and send an email to yourself, configured in the .env file.
+`;
+
+// Print "Apps Running:" in red and list app names in green
+const appsDir = path.join(__dirname, "./apps");
+if (fs.existsSync(appsDir)) {
+  const appNames = fs
+    .readdirSync(appsDir, { withFileTypes: true })
+    .filter((dirent) => dirent.isDirectory())
+    .map((dirent) => dirent.name);
+
+  console.log(chalk.red("Apps Running:"));
+  appNames.forEach((appName) => {
+    console.log(`\n${chalk.green(appName)}${chalk.grey(description)}`);
+  });
+} else {
+  console.log(chalk.red("Apps directory not found."));
+}
 
 // setup gmail access
 dotenv.config();
