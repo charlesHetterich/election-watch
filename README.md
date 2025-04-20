@@ -2,8 +2,7 @@
 
 Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening for ***\<trigger\>*** is *computationally inexpensive* but requires **something to always be on**. Doing ***\<thing\>*** may be *computationally expensive* but only requires **on-demand compute**.
 
-> *Everyone* should have something between a raspberry-pi and a router plugged into their wall at home. This may enable pretty complex background dapps (ex: DCA'ing on AssetHub) which require no signing, since actions taken on your behalf are being run from your local, trusted machine.
-
+> *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always-on & always connected to the internet). I feel like this product should be pretty feasible. My hope is this may enable pretty complex background dapps (ex: DCA'ing on AssetHub) which require no signing, since actions taken on your behalf are being run from your local, trusted machine.
 
 ### Repository Goals
 

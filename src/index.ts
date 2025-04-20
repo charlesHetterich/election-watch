@@ -21,6 +21,7 @@ async function main() {
     const client = createClient(getSmProvider(chain));
     const papi = client.getTypedApi(dot);
 
+    // Provide context to app calls
     const context = new Context(papi);
     function callWithContext(call: Function) {
         return async (args: any) => {
