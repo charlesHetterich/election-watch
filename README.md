@@ -12,6 +12,8 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 
 **(3)** Be as lightweight as possible
 
+**(4)** Be as readable as possible for a layperson. *Code is truth— no process is trustless unless you personally can read the code.*
+
 # Setup
 run locally with `npx tsx src/index.ts`
 
