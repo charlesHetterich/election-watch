@@ -37,13 +37,28 @@ fly apps destroy election-watch
 <br><br>
 
 # Apps
-### Application Design Pattern
-Listen for trigger events, which then:
-- Perform some extremely lightweight work **OR**
-- Spin up a remote worker which does heavier processing
+Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the following for variables defined:
 
+```ts
+export const watching = "event.Something.ImWatching";
+export const description = "Description of how this app works & what it does";
 
-<br><br>
+export function trigger(
+    content: Any, // Emitted event content. You should type this explicitly.
+    context: Context<typeof dot>
+): boolean {
+    // do some filtering . . .
+}
+
+export function lambda(
+    content: Any, // Emitted event content. You should type this explicitly.
+    context: Context<typeof dot>
+) {
+    // perform some work . . .
+}
+```
+
+<br>
 
 ### *Election Watch*
 Super light weight app to run as a free fly.io session that watches for phase changes in polkadot election cycles.
