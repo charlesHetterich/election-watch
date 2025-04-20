@@ -6,6 +6,10 @@ import { chainSpec } from "polkadot-api/chains/polkadot";
 import { start } from "polkadot-api/smoldot";
 import dotenv from "dotenv";
 
+import { SUBSTRATE_EVENT_LAMBDAS } from "./titles";
+
+console.log(SUBSTRATE_EVENT_LAMBDAS);
+
 // setup gmail access
 dotenv.config();
 const EMAIL = process.env.EMAIL;

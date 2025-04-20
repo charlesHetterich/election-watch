@@ -1,4 +1,5 @@
-# Polkadot Election Watch
+# Substrate Lambdas
+#### *(prev. Election Watch)*
 
 Super light weight app to run as a free fly.io session that watches for phase changes in polkadot election cycles.
 
@@ -9,7 +10,9 @@ Currently this simply sends an email. In the future I would like this to trigger
 _An interesting slightly more ambitious idea in the future could be to to use this concept to build a general 'lambda' type SaaS that triggers lambda functions on any polkadot event_
 
 ## Setup
+run locally with `npx tsx src/index.ts`
 
+### **fly.io**
 ```
 brew install flyctl
 ```
@@ -19,6 +22,10 @@ brew install flyctl
 This will prompt you to login and requires you to connect your credit card. _I think_ that I've set up the settings s.t. you won't be charged anything.
 
 ```bash
-fly launch -y
-fly scale count 1 -y
+# launch
+fly apps create election-watch
+fly deploy
+
+# shut down
+fly apps destroy election-watch
 ```
