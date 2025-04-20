@@ -6,4 +6,4 @@
 
 - Add Typing toolage that makes the data types in `lambda` and `trigger` less verbose on the side of the app developer
 
-- Design such that we can decouple actual apps from this repository, and allow nice "plug-n-play" capability to choose various apps (a.t.m. this is basically a personal repo running my own apps)
+- Design such that we can decouple actual apps from this repository, and allow nice "plug-n-play" capability to choose various apps (a.t.m. this is basically a personal repo running my own apps). A tricky part of this will be decoupling app dependencies from "substrate-lambdas" dependencies. Perhaps there is a way to define app dependencies inside of app folders & then dynamically install these on launch.
