@@ -1,6 +1,5 @@
 import { dot } from "@polkadot-api/descriptors";
-
-import { Context, Events, Payload } from "../../app-support";
+import { Context, Events, Payload } from "@lambdas/app-support";
 import { aggData } from "./aggData";
 
 export const watching = "event.ElectionProviderMultiPhase.PhaseTransitioned";
@@ -15,7 +14,7 @@ Data is downloaded locally, uploaded to Huggingface, and then deleted from local
  */
 export function trigger(
     transition: Payload<Events, typeof watching>,
-    _context: Context<typeof dot>
+    _: Context<typeof dot>
 ): boolean {
     return transition.to.type == "Signed";
 }
@@ -24,7 +23,7 @@ export function trigger(
  * Aggregate snapshot data
  */
 export function lambda(
-    _content: Payload<Events, typeof watching>,
+    _: Payload<Events, typeof watching>,
     context: Context<typeof dot>
 ) {
     aggData(context.api);

@@ -4,9 +4,10 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 
 > *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). I feel like this product should be pretty feasible.
 >
->My hope is this may enable pretty complex background dapps 
+>My hope is this may enable seemingly complex background dapps to exist in a self-hosted manner
 > - DCA'ing on AssetHub 
 > - Pay for & launch external GPU-server workloads
+> - Some chain-reaction of events triggering other events
 >
 >which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 
@@ -18,7 +19,7 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 
 **(3)** Be as lightweight as possible
 
-**(4)** Be as readable as possible for a layperson (both core & app code). *Code is truth— no process is trustless unless you personally can read the code.*
+**(4)** Be as readable as possible for a layperson (specifically *app* code, but also *core* code where possible). *Code is truth— no process is trustless unless you personally can read the code.*
 
 # Setup
 run locally with `npx tsx src/index.ts`
@@ -48,18 +49,21 @@ fly apps destroy substrate-lambdas -y
 Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the following four variables defined:
 
 ```ts
+import { dot } from "@polkadot-api/descriptors";
+import { Context, Events, Payload } from "@lambdas/app-support";
+
 export const watching = "event.Something.ImWatching";
 export const description = "Description of how this app works & what it does";
 
 export function trigger(
-    content: Any, // Emitted event content. You should type this explicitly.
+    content: Payload<Events, typeof watching>,
     context: Context<typeof dot>
 ): boolean {
     // do some filtering . . .
 }
 
 export function lambda(
-    content: Any, // Emitted event content. You should type this explicitly.
+    content: Payload<Events, typeof watching>,
     context: Context<typeof dot>
 ) {
     // perform some work . . .

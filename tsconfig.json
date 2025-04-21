@@ -4,7 +4,12 @@
       "moduleResolution": "bundler",
       "target": "ES2020",
       "esModuleInterop": true,
-      "skipLibCheck": true
+      "skipLibCheck": true,
+
+      "baseUrl": "src",
+      "paths": {
+        "@lambdas/*": ["*"]
+      }
     },
 
     "include": ["src/**/*"],
