@@ -37,16 +37,17 @@ type DeepLookup<
     : T;
 
 /**
- * Type alias for `DeepLookup` exposed for apps
- */
-export type Payload<T, Path extends readonly string[] | string> = DeepLookup<
-    T,
-    Path
->;
-
-/**
  * Descriptor tree for PAPI events
  */
-export type Events = {
+export type Observables = {
     event: DescriptorTree<typeof dot.descriptors.pallets.__event>;
+    storage: DescriptorTree<typeof dot.descriptors.pallets.__storage>;
 };
+
+/**
+ * Type alias for `DeepLookup` exposed for apps
+ */
+export type Payload<Path extends readonly string[] | string> = DeepLookup<
+    Observables,
+    Path
+>;

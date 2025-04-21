@@ -1,5 +1,5 @@
 import { dot } from "@polkadot-api/descriptors";
-import { Context, Events, Payload } from "@lambdas/app-support";
+import { Context, Payload } from "@lambdas/app-support";
 import { sendEmail } from "./email";
 
 export const watching = "event.ElectionProviderMultiPhase.PhaseTransitioned";
@@ -11,7 +11,7 @@ Listens for changes in npos election phases on the polkadot network and send a s
  * Trigger for all phase transition events
  */
 export function trigger(
-    _: Payload<Events, typeof watching>,
+    _: Payload<typeof watching>,
     __: Context<typeof dot>
 ): boolean {
     return true;
@@ -21,7 +21,7 @@ export function trigger(
  * Send phase transition data to email
  */
 export function lambda(
-    content: Payload<Events, typeof watching>,
+    content: Payload<typeof watching>,
     _: Context<typeof dot>
 ) {
     sendEmail("Election Phase Transitioned", content);

@@ -1,5 +1,5 @@
 import { dot } from "@polkadot-api/descriptors";
-import { Context, Events, Payload } from "@lambdas/app-support";
+import { Context, Payload } from "@lambdas/app-support";
 import { aggData } from "./aggData";
 
 export const watching = "event.ElectionProviderMultiPhase.PhaseTransitioned";
@@ -13,7 +13,7 @@ Data is downloaded locally, uploaded to Huggingface, and then deleted from local
  * Triggers when `Signed` phase begins. This should trigger once per era.
  */
 export function trigger(
-    transition: Payload<Events, typeof watching>,
+    transition: Payload<typeof watching>,
     _: Context<typeof dot>
 ): boolean {
     return transition.to.type == "Signed";
@@ -23,7 +23,7 @@ export function trigger(
  * Aggregate snapshot data
  */
 export function lambda(
-    _: Payload<Events, typeof watching>,
+    _: Payload<typeof watching>,
     context: Context<typeof dot>
 ) {
     aggData(context.api);

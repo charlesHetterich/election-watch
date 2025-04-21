@@ -56,14 +56,14 @@ export const watching = "event.Something.ImWatching";
 export const description = "Description of how this app works & what it does";
 
 export function trigger(
-    content: Payload<Events, typeof watching>,
+    content: Payload<typeof watching>,
     context: Context<typeof dot>
 ): boolean {
     // do some filtering . . .
 }
 
 export function lambda(
-    content: Payload<Events, typeof watching>,
+    content: Payload<typeof watching>,
     context: Context<typeof dot>
 ) {
     // perform some work . . .
