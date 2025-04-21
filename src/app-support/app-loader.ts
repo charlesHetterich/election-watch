@@ -1,10 +1,10 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { ChainDefinition, TypedApi } from "polkadot-api";
+import { TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
 
-const appsDir = path.join(__dirname, "./apps");
+const appsDir = path.join(__dirname, "../apps");
 
 /**
  * Wrapper around an `observable` we would like to watch
@@ -82,13 +82,6 @@ export class LambdaApp {
         this.trigger = app.trigger;
         this.lambda = app.lambda;
     }
-}
-
-/**
- * Provides system context to lambda apps
- */
-export class Context<T extends ChainDefinition> {
-    constructor(public api: TypedApi<T>) {}
 }
 
 /**
