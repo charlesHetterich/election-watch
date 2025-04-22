@@ -3,6 +3,10 @@ import path from "path";
 import chalk from "chalk";
 import { TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
+import { assert } from "console";
+
+// TODO! decide if I want something like this which would make apps visible at compile-time (not so sure this is useful though...)
+// const modules = import.meta.glob("./lambdas/**/*.ts", { eager: true });
 
 const appsDir = path.join(__dirname, "../apps");
 
@@ -18,7 +22,7 @@ class Watching {
     /**
      * The name of the observable givenn by its call path
      */
-    name: String;
+    callPth: String;
 
     /**
      * Configure new watching
@@ -33,7 +37,7 @@ class Watching {
             call = call[pth];
         }
         this.call = call["watch"];
-        this.name = callPth;
+        this.callPth = callPth;
     }
 }
 
@@ -60,13 +64,13 @@ export class LambdaApp {
      * Filters instances of the event we are watching. Triggers `this.lambda` when true is returned
      * TODO! specify type better
      */
-    trigger: Function;
+    trigger: (payload, context) => boolean;
 
     /**
      * The work to do after `this.trigger` fires
      * TODO! specify type better
      */
-    lambda: Function;
+    lambda: (payload, context) => void;
 
     /**
      * Configure new lambda app
@@ -74,14 +78,40 @@ export class LambdaApp {
      * @param appName The name of the app with we attempt to import
      * @param api PAPI light client.
      */
-    constructor(appName: string, api: TypedApi<typeof dot>) {
-        const app = require(path.join(appsDir, appName, "index.ts"));
-        this.appName = appName;
-        this.watching = new Watching(app.watching, api);
-        this.description = app.description.trim();
-        this.trigger = app.trigger;
-        this.lambda = app.lambda;
+    constructor(init?: Partial<LambdaApp>) {
+        Object.assign(this, init);
     }
+}
+
+function loadApp(appName: string, api: TypedApi<typeof dot>) {
+    // Pull application components
+    const { watching, description, trigger, lambda } = require(path.join(
+        appsDir,
+        appName,
+        "index.ts"
+    ));
+
+    // TODO! Better assertions
+    // - validate types exactly (given by Payload<watching>)
+    // - at least validate trigger returns boolean
+    assert(
+        typeof watching == "string",
+        `App ${appName} does not export a string watching path`
+    );
+    assert(
+        typeof description == "string",
+        `App ${appName} does not export a string description`
+    );
+    assert(trigger.length == 2, `App ${appName} trigger signature incorrect`);
+    assert(lambda.length == 2, `App ${appName} lambda signature incorrect`);
+
+    return new LambdaApp({
+        appName: appName,
+        watching: new Watching(watching, api),
+        description: description.trim(),
+        trigger: trigger,
+        lambda: lambda,
+    });
 }
 
 /**
@@ -96,7 +126,14 @@ export function loadApps(api: TypedApi<typeof dot>) {
             .filter((dirent) => dirent.isDirectory())
             .map((dirent) => dirent.name);
         appNames.forEach((appName) => {
-            apps.push(new LambdaApp(appName, api));
+            try {
+                const app = loadApp(appName, api);
+                apps.push(app);
+            } catch (error) {
+                console.error(
+                    chalk.red(`Error loading app ${appName}: ${error}`)
+                );
+            }
         });
     } else {
         console.log(chalk.red("Apps directory not found."));

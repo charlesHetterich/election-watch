@@ -8,6 +8,7 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 > - DCA'ing on AssetHub 
 > - Pay for & launch external GPU-server workloads
 > - Some chain-reaction of events triggering other events
+> - Extensive & highly customizable notification services
 >
 >which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 
@@ -50,7 +51,7 @@ Applications are expected to be defined in `src/apps/<app-name>/index.ts` with t
 
 ```ts
 import { dot } from "@polkadot-api/descriptors";
-import { Context, Events, Payload } from "@lambdas/app-support";
+import { Context, Payload } from "@lambdas/app-support";
 
 export const watching = "event.Something.ImWatching";
 export const description = "Description of how this app works & what it does";
@@ -76,3 +77,8 @@ export function lambda(
 Super light weight app to run as a free fly.io session that watches for phase changes in polkadot election cycles.
 
 Currently this simply sends an email. In the future I would like this to trigger a slightly larger process to download the election snapshot and add it to a huggingface dataset. For right now, I am the slightly larger process (aka manual style).
+
+<br><br><br>
+
+
+###### ***~ built on [papi](https://papi.how/) ~***

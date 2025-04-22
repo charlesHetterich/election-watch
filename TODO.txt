@@ -11,3 +11,6 @@
 - Design such that we can decouple actual apps from this repository, and allow nice "plug-n-play" capability to choose various apps (a.t.m. this is basically a personal repo running my own apps). A tricky part of this will be decoupling app dependencies from "substrate-lambdas" dependencies. Perhaps there is a way to define app dependencies inside of app folders & then dynamically install these on launch.
 
 - Give App Context for logs/errors emitted from an app (detect through matching function based on callstack? possible in ts? need "macros"?)
+
+scratch todo
+- maybe app validation can be run as a compile-time script? this way more sophisitcated type checks are possible (and maybe gather more general meta-data for each app)

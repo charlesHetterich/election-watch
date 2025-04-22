@@ -12,7 +12,7 @@ RUN apk add --no-cache bash python3 py3-pip
 # Install python dependencies
 RUN python3 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
-RUN pip install huggingface_hub
+RUN pip install huggingface_hub vastai
 
 # Copy package.json and package-lock.json (or yarn.lock)
 COPY package*.json ./

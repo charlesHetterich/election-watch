@@ -1,5 +1,5 @@
 import { dot } from "@polkadot-api/descriptors";
-import { ChainDefinition, createClient, TypedApi } from "polkadot-api";
+import { createClient } from "polkadot-api";
 import { getSmProvider } from "polkadot-api/sm-provider";
 import { chainSpec } from "polkadot-api/chains/polkadot"; // Can select other chains (kusama, westend, etc. here)
 import { start } from "polkadot-api/smoldot";
@@ -26,7 +26,7 @@ async function main() {
         };
     }
 
-    // Load apps
+    // Load apps | TODO! batch triggers listening to the same observable
     const apps = loadApps(papi);
     console.log("\n" + chalk.red("Apps Running:"));
     apps.forEach((app) => {
@@ -36,7 +36,7 @@ async function main() {
                 chalk.green(app.appName) +
                 "    " +
                 chalk.white.bold("watching ") +
-                chalk.grey(app.watching.name)
+                chalk.grey(app.watching.callPth)
         );
         console.log(chalk.grey(app.description) + "\n");
 
