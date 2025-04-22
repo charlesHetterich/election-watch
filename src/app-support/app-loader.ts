@@ -83,6 +83,23 @@ export class LambdaApp {
     }
 }
 
+export class MetaApp {
+    name: string;
+
+    app: LambdaApp;
+    logs: string[] = [];
+
+    constructor(init?: Partial<MetaApp>) {
+        Object.assign(this, init);
+    }
+}
+
+function validate(result: boolean, e: Error) {
+    if (!result) {
+        throw e;
+    }
+}
+
 function loadApp(appName: string, api: TypedApi<typeof dot>) {
     // Pull application components
     const { watching, description, trigger, lambda } = require(path.join(
@@ -94,16 +111,22 @@ function loadApp(appName: string, api: TypedApi<typeof dot>) {
     // TODO! Better assertions
     // - validate types exactly (given by Payload<watching>)
     // - at least validate trigger returns boolean
-    assert(
+    validate(
         typeof watching == "string",
-        `App ${appName} does not export a string watching path`
+        TypeError(`App ${appName} does not export a string watching path`)
     );
-    assert(
+    validate(
         typeof description == "string",
-        `App ${appName} does not export a string description`
+        TypeError(`App ${appName} does not export a string description`)
     );
-    assert(trigger.length == 2, `App ${appName} trigger signature incorrect`);
-    assert(lambda.length == 2, `App ${appName} lambda signature incorrect`);
+    validate(
+        trigger.length == 2,
+        TypeError(`App ${appName} trigger signature incorrect`)
+    );
+    validate(
+        lambda.length == 2,
+        TypeError(`App ${appName} lambda signature incorrect`)
+    );
 
     return new LambdaApp({
         appName: appName,
@@ -118,7 +141,7 @@ function loadApp(appName: string, api: TypedApi<typeof dot>) {
  * Load all apps from the apps directory.
  */
 export function loadApps(api: TypedApi<typeof dot>) {
-    let apps: LambdaApp[] = [];
+    let apps: MetaApp[] = [];
 
     if (fs.existsSync(appsDir)) {
         const appNames = fs
@@ -128,10 +151,19 @@ export function loadApps(api: TypedApi<typeof dot>) {
         appNames.forEach((appName) => {
             try {
                 const app = loadApp(appName, api);
-                apps.push(app);
-            } catch (error) {
-                console.error(
-                    chalk.red(`Error loading app ${appName}: ${error}`)
+                apps.push(
+                    new MetaApp({
+                        name: appName,
+                        app: app,
+                    })
+                );
+            } catch (e) {
+                apps.push(
+                    new MetaApp({
+                        name: appName,
+                        app: undefined,
+                        logs: [e.message],
+                    })
                 );
             }
         });

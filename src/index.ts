@@ -7,6 +7,7 @@ import chalk from "chalk";
 
 import { loadApps, Context } from "./app-support";
 import { SUBSTRATE_LAMBDAS } from "./titles";
+import { skip } from "node:test";
 
 console.log(SUBSTRATE_LAMBDAS);
 
@@ -27,12 +28,26 @@ async function main() {
     }
 
     // Load apps | TODO! batch triggers listening to the same observable
-    const apps = loadApps(papi);
+    const wrappedApps = loadApps(papi);
     console.log("\n" + chalk.red("Apps Running:"));
-    apps.forEach((app) => {
+    wrappedApps.forEach(({ name, app, logs }) => {
+        if (!app) {
+            // Log information about each app
+            console.log(
+                "\n" + "[" + chalk.red("x") + "]  " + chalk.bgRed(name)
+            );
+            logs.forEach((l) =>
+                console.log("[" + chalk.red("Error") + "] " + l)
+            );
+            return;
+        }
+
         // Log information about each app
         console.log(
             "\n" +
+                "[" +
+                chalk.green("ok") +
+                "] " +
                 chalk.green(app.appName) +
                 "    " +
                 chalk.white.bold("watching ") +
