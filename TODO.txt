@@ -14,3 +14,5 @@
 
 scratch todo
 - maybe app validation can be run as a compile-time script? this way more sophisitcated type checks are possible (and maybe gather more general meta-data for each app)
+
+- integrate [Grafana](https://grafana.com/)

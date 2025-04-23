@@ -1,5 +1,5 @@
 import { dot } from "@polkadot-api/descriptors";
-import { ChainDefinition, PlainDescriptor, TypedApi } from "polkadot-api";
+import { PlainDescriptor } from "polkadot-api";
 
 /**
  * Builds tree of descriptor types
@@ -41,7 +41,7 @@ type DeepLookup<
  */
 export type Observables = {
     event: DescriptorTree<typeof dot.descriptors.pallets.__event>;
-    storage: DescriptorTree<typeof dot.descriptors.pallets.__storage>;
+    query: DescriptorTree<typeof dot.descriptors.pallets.__storage>;
 };
 
 /**

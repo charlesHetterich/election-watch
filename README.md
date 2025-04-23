@@ -2,7 +2,7 @@
 
 Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening for ***\<trigger\>*** is *computationally inexpensive* but requires **something to always be on**. Doing ***\<thing\>*** may be *computationally expensive* but only requires **on-demand availability**.
 
-> *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). I feel like this product should be pretty feasible.
+> *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). Hardware-wise, think of something like an Amazon Alexa. I feel like this product should be pretty feasible.
 >
 >My hope is this may enable seemingly complex background dapps to exist in a self-hosted manner
 > - DCA'ing on AssetHub 
@@ -71,12 +71,8 @@ export function lambda(
 }
 ```
 
-<br>
-
-### *Election Watch*
-Super light weight app to run as a free fly.io session that watches for phase changes in polkadot election cycles.
-
-Currently this simply sends an email. In the future I would like this to trigger a slightly larger process to download the election snapshot and add it to a huggingface dataset. For right now, I am the slightly larger process (aka manual style).
+## Hardware Campaign
+...
 
 <br><br><br>
 
