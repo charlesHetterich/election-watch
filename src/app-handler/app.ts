@@ -1,7 +1,6 @@
 import { TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
-import { Context } from "../context";
-import { Payload } from "../type-helper";
+import { Payload, Context } from "@lambdas/app-support";
 
 export enum WatchType {
     EVENT = "event",

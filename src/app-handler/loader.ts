@@ -3,7 +3,6 @@ import path from "path";
 import chalk from "chalk";
 import { TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
-import { Context } from "../context";
 import { createClient } from "polkadot-api";
 import { getSmProvider } from "polkadot-api/sm-provider";
 import { chainSpec } from "polkadot-api/chains/polkadot"; // Can select other chains (kusama, westend, etc. here)

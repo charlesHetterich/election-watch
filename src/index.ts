@@ -1,4 +1,4 @@
-import { loadApps } from "./app-support";
+import { loadApps } from "./app-handler";
 import { SUBSTRATE_LAMBDAS } from "./titles";
 
 async function main() {

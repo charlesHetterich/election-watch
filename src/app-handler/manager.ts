@@ -1,8 +1,8 @@
 import chalk from "chalk";
 import { TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
-import { Context } from "../context";
 
+import { Context } from "@lambdas/app-support";
 import { WatchType, MetaApp } from "./app";
 
 /**
