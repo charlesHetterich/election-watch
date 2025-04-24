@@ -77,10 +77,3 @@ export function lambda(
 
 
 ###### ***built on [papi](https://papi.how/)***
-
-<br><br><br>
-<br><br><br>
-<br><br><br>
-
-##### notes
-- [apache libcloud for workers](https://libcloud.apache.org/)

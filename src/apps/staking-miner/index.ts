@@ -1,11 +1,13 @@
 import { dot } from "@polkadot-api/descriptors";
 import { Context, Payload } from "@lambdas/app-support";
-import { tryLaunch, destroyInstance } from "@lambdas/workers";
+import { workers } from "@lambdas/app-support";
 // import { aggData } from "./aggData";
 
 export const watching = "event.ElectionProviderMultiPhase.PhaseTransitioned";
 export const description = `
-Testing GPU launch
+Once per day when the \`Signed\` phase of the npos election cycle begins, spin up a *vast.ai* worker to calculate & submit an election solution using a parameterized reinforcement learning model.
+
+The worker is destroyed when a \`SolutionStored\` event is emitted with self as the origin
 `;
 
 /**
@@ -25,10 +27,8 @@ export async function lambda(
     _: Payload<typeof watching>,
     _c: Context<typeof dot>
 ) {
-    // aggData(context.api);
-
     console.log("TESTING VAST LAUNCH");
-    const machineId = await tryLaunch({
+    const machineId = await workers.vast.tryLaunch({
         gpu_name: "RTX_3090",
         reliability: 0.99,
         num_gpus: 1,
@@ -40,7 +40,7 @@ export async function lambda(
     if (machineId) {
         console.log("Destroying machine in 10 seconds...");
         setTimeout(async () => {
-            const destroyed = await destroyInstance(machineId);
+            const destroyed = await workers.vast.destroyInstance(machineId);
             console.log("Machine destroyed:", destroyed);
         }, 10000);
     }
