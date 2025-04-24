@@ -16,3 +16,7 @@ scratch todo
 - maybe app validation can be run as a compile-time script? this way more sophisitcated type checks are possible (and maybe gather more general meta-data for each app)
 
 - integrate [Grafana](https://grafana.com/)
+- integrate [libcloud](https://github.com/apache/libcloud) for unified access to popular cloud providers
+
+- containerize runtime in [dino](https://deno.com/) with restricted access
+   - figure out how to securely inject custom `host` functions into apps with privilaged OS access

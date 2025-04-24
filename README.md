@@ -2,16 +2,6 @@
 
 Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening for ***\<trigger\>*** is *computationally inexpensive* but requires **something to always be on**. Doing ***\<thing\>*** may be *computationally expensive* but only requires **on-demand availability**.
 
-> *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). Hardware-wise, think of something like an Amazon Alexa. I feel like this product should be pretty feasible.
->
->My hope is this may enable seemingly complex background dapps to exist in a self-hosted manner
-> - DCA'ing on AssetHub 
-> - Pay for & launch external GPU-server workloads
-> - Some chain-reaction of events triggering other events
-> - Extensive & highly customizable notification services
->
->which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
-
 ### Repository Goals
 
 **(1)** Provide developers with a platform to rapidly develop & easily deploy *lambda* style applications which follow a standardized design pattern & set of tools. One important tool will be the ability to launch remote workers across various cloud providers.
@@ -72,9 +62,25 @@ export function lambda(
 ```
 
 ## Hardware Campaign
+> *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). Hardware-wise, think of something like an Amazon Alexa. I feel like this product should be pretty feasible.
+>
+>My hope is this may enable seemingly complex background dapps to exist in a self-hosted manner
+> - DCA'ing on AssetHub 
+> - Pay for & launch external GPU-server workloads
+> - Some chain-reaction of events triggering other events
+> - Extensive & highly customizable notification services
+>
+>which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 ...
 
 <br><br><br>
 
 
 ###### ***built on [papi](https://papi.how/)***
+
+<br><br><br>
+<br><br><br>
+<br><br><br>
+
+##### notes
+- [apache libcloud for workers](https://libcloud.apache.org/)
