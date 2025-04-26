@@ -63,7 +63,9 @@ export async function loadApps() {
     if (fs.existsSync(appsDir)) {
         const appNames = fs
             .readdirSync(appsDir, { withFileTypes: true })
-            .filter((dirent) => dirent.isDirectory())
+            .filter(
+                (dirent) => dirent.isDirectory() && !dirent.name.startsWith("_")
+            )
             .map((dirent) => dirent.name);
         apps = await Promise.all(
             appNames.map((appName) => loadApp(appName, papi))
