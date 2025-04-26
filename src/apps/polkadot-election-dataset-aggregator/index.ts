@@ -1,8 +1,9 @@
 import { dot } from "@polkadot-api/descriptors";
-import { Context, Payload } from "@lambdas/app-support";
+import { Context, Observables, Payload } from "@lambdas/app-support";
 import { aggData } from "./aggData";
 
-export const watching = "event.ElectionProviderMultiPhase.PhaseTransitioned";
+export const watching =
+    Observables.event.ElectionProviderMultiPhase.PhaseTransitioned;
 export const description = `
 Once per day, aggregates election snapshots & results into a Huggingface Dataset. Each time this triggers we capture the current "snapshot" (today's sample) and "results" (yesterday's label).
 

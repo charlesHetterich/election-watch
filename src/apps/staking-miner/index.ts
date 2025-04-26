@@ -1,9 +1,7 @@
 import { dot } from "@polkadot-api/descriptors";
-import { Context, Payload } from "@lambdas/app-support";
-import { workers } from "@lambdas/app-support";
-// import { aggData } from "./aggData";
+import { Context, Observables, Payload, workers } from "@lambdas/app-support";
 
-export const watching = "event.ElectionProviderMultiPhase.PhaseTransitioned";
+export const watching = Observables.event.Balances.Transfer;
 export const description = `
 Once per day when the \`Signed\` phase of the npos election cycle begins, spin up a *vast.ai* worker to calculate & submit an election solution using a parameterized reinforcement learning model.
 
@@ -17,7 +15,7 @@ export function trigger(
     transition: Payload<typeof watching>,
     _: Context<typeof dot>
 ): boolean {
-    return transition.to.type == "Signed";
+    return true;
 }
 
 /**
@@ -29,7 +27,7 @@ export async function lambda(
 ) {
     console.log("TESTING VAST LAUNCH");
     const machineId = await workers.vast.tryLaunch({
-        gpu_name: "RTX_3090",
+        gpu_name: "RTX_3070",
         reliability: 0.99,
         num_gpus: 1,
         min_ram_gb: 8,

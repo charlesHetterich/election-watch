@@ -2,6 +2,8 @@
 
 Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening for ***\<trigger\>*** is *computationally inexpensive* but requires **something to always be on**. Doing ***\<thing\>*** may be *computationally expensive* but only requires **on-demand availability**.
 
+#### *Substrate Lambdas aims to provide a* **self hosted FaaS** *(function-as-a-service) platform.*
+
 ### Repository Goals
 
 **(1)** Provide developers with a platform to rapidly develop & easily deploy *lambda* style applications which follow a standardized design pattern & set of tools. One important tool will be the ability to launch remote workers across various cloud providers.
@@ -38,26 +40,25 @@ fly apps destroy substrate-lambdas -y
 
 # Apps
 Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the following four variables defined:
-
 ```ts
 import { dot } from "@polkadot-api/descriptors";
-import { Context, Payload } from "@lambdas/app-support";
+import { Context, Payload, Observables } from "@lambdas/app-support";
 
-export const watching = "event.Something.ImWatching";
+export const watching = Observables.event.Something.ImWatching;
 export const description = "Description of how this app works & what it does";
 
 export function trigger(
     content: Payload<typeof watching>,
     context: Context<typeof dot>
 ): boolean {
-    // do some filtering . . .
+    // custom filtering . . .
 }
 
 export function lambda(
     content: Payload<typeof watching>,
     context: Context<typeof dot>
 ) {
-    // perform some work . . .
+    // do something upon triggering . . .
 }
 ```
 
@@ -69,6 +70,7 @@ export function lambda(
 > - Pay for & launch external GPU-server workloads
 > - Some chain-reaction of events triggering other events
 > - Extensive & highly customizable notification services
+> - Self-hosted general tax data aggregator
 >
 >which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 ...

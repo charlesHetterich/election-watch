@@ -1,8 +1,9 @@
 import { dot } from "@polkadot-api/descriptors";
-import { Context, Payload } from "@lambdas/app-support";
+import { Context, Payload, Observables } from "@lambdas/app-support";
 import { sendEmail } from "./email";
 
-export const watching = "event.ElectionProviderMultiPhase.PhaseTransitioned";
+export const watching =
+    Observables.event.ElectionProviderMultiPhase.PhaseTransitioned;
 export const description = `
 Listens for changes in npos election phases on the polkadot network and send a self-email (configured in .env) with the raw transition data JSON.
 `;

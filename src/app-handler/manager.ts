@@ -47,12 +47,18 @@ export class AppManager {
             this.logLaunchStatus({ app, ...meta });
             if (meta.alive) {
                 app.watching.type == WatchType.EVENT
-                    ? app.watching
-                          .call(
-                              async (payload) =>
-                                  await app.trigger(payload, context)
-                          )
-                          .forEach((payload) => app.lambda(payload, context))
+                    ? // TODO! sort out why top option doesn't work, or switch all to latter
+                      // ? app.watching
+                      //       .call(
+                      //           async (payload) =>
+                      //               await app.trigger(payload, context)
+                      //       )
+                      //       .forEach((payload) => app.lambda(payload, context))
+                      app.watching.call().forEach(async (payload) => {
+                          if (await app.trigger(payload, context)) {
+                              app.lambda(payload, context);
+                          }
+                      })
                     : app.watching.call().forEach(async (payload) => {
                           if (await app.trigger(payload, context)) {
                               app.lambda(payload, context);

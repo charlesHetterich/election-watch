@@ -21,12 +21,13 @@ const appsDir = path.join(process.cwd(), "src/apps");
  *
  * @returns The `MetaApp` of a *loaded or failed* app
  */
-function loadApp(appName: string, api: TypedApi<typeof dot>): MetaApp {
+async function loadApp(
+    appName: string,
+    api: TypedApi<typeof dot>
+): Promise<MetaApp> {
     try {
-        const { watching, description, trigger, lambda } = require(path.join(
-            appsDir,
-            appName,
-            "index.ts"
+        const { watching, description, trigger, lambda } = (await import(
+            path.join(appsDir, appName, "index.ts")
         )) as AppModule;
         return new MetaApp(
             appName,
@@ -64,9 +65,9 @@ export async function loadApps() {
             .readdirSync(appsDir, { withFileTypes: true })
             .filter((dirent) => dirent.isDirectory())
             .map((dirent) => dirent.name);
-        appNames.forEach((appName) => {
-            apps.push(loadApp(appName, papi));
-        });
+        apps = await Promise.all(
+            appNames.map((appName) => loadApp(appName, papi))
+        );
     } else {
         console.log(chalk.red("Apps directory not found."));
     }
