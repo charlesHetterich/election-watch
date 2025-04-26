@@ -4,6 +4,7 @@ import subprocess
 from typing import Optional
 import argparse
 import json
+import sys
 
 vast_sdk  = vastai_sdk.VastAI()
 
@@ -35,12 +36,13 @@ def search(
     return (rows, err)
 
 
-def launch(machine_id: str) -> int:
+def launch(machine_id: str) -> str:
      return vast_sdk.create_instance(
         id=machine_id,
         disk=100,
         image='pytorch/pytorch:latest',
-        onstart_cmd="bash -c 'echo Running my work...; python /path/to/your_script.py; vastai stop instance \$CONTAINER_ID'",
+        # onstart_cmd="bash -c 'echo Running my work...; python /path/to/your_script.py; vastai stop instance \$CONTAINER_ID'",
+        onstart_cmd="bash -c 'echo Running my work...",
         ssh=True,
     )['new_contract']
     
@@ -48,9 +50,9 @@ def destroy(machine_id: str):
 
     cmd = f"vastai destroy instance {machine_id}"
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    
     out = result.stdout.strip()
     err = result.stderr.strip()
+
     return len(err) == 0 and len(out) > 0 and not out.startswith("failed")
 
 def try_launch(
@@ -60,17 +62,27 @@ def try_launch(
     min_ram_gb: int = 8,
     max_usd_per_hr: float = 1,
 ) -> Optional[str]:
-    (offers, _) = search(
-        gpu_name=gpu_name,
-        reliability=reliability,
-        num_gpus=num_gpus,
-        min_ram_gb=min_ram_gb,
-        max_usd_per_hr=max_usd_per_hr,
-    )
-
-    if len(offers) < 1:
+    try:
+        (offers, _) = search(
+            gpu_name=gpu_name,
+            reliability=reliability,
+            num_gpus=num_gpus,
+            min_ram_gb=min_ram_gb,
+            max_usd_per_hr=max_usd_per_hr,
+        )
+    except Exception as e:
+        print(f"Error during search: {e}", file=sys.stderr)
         return None
-    return launch(offers[0]['ID'])
+
+    if not offers:
+        return None
+    
+    try:
+        machine_id = launch(offers[0]['ID'])
+        return machine_id
+    except Exception as e:
+        print(f"try_launch: launch failed: {e}", file=sys.stderr)
+        return None
 
 def main():
     p = argparse.ArgumentParser()

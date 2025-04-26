@@ -1,6 +1,13 @@
 // vast.ts
 import { exec as _exec } from "child_process";
 import { promisify } from "util";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// replicate __filename and __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const exec = promisify(_exec);
 
 export interface TryLaunchParams {
@@ -12,7 +19,8 @@ export interface TryLaunchParams {
 }
 
 export async function tryLaunch(
-    params: TryLaunchParams = {}
+    params: TryLaunchParams = {},
+    nRetries: number = 5
 ): Promise<string | null> {
     const args = [
         "try_launch",
@@ -34,23 +42,38 @@ export async function tryLaunch(
         const { stdout, stderr } = await exec(cmd);
         console.log(stderr);
         const { result } = JSON.parse(stdout);
-        return result as string | null;
+        if (result == null && nRetries > 0) {
+            console.log(`Retrying LAUNCH on ${params}`);
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+            return tryLaunch(params, nRetries - 1);
+        }
+        return result;
     } catch (err: any) {
-        // only throw if python really errored
-        throw new Error(`vast.py error: ${err.stderr ?? err.message}`);
+        console.error(err);
+        if (nRetries > 0) {
+            console.log(`Retrying LAUNCH on ${params}`);
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+            return tryLaunch(params, nRetries - 1);
+        }
+        return null;
     }
 }
 
-export async function destroyInstance(machineId: string): Promise<boolean> {
-    const cmd = `python ${__dirname}/api.py destroy ${machineId}`;
-    try {
-        // if the script exits non-zero, this will reject
-        const { stdout, stderr } = await exec(cmd);
-        console.log(stderr);
-        const { result } = JSON.parse(stdout);
-        return result as any;
-    } catch (err: any) {
-        // only throw if python really errored
-        throw new Error(`vast.py error: ${err.stderr ?? err.message}`);
+export async function destroyInstance(
+    machineId: string,
+    nRetries: number = 5
+): Promise<boolean> {
+    const cmd = `vastai destroy instance ${machineId}`;
+    const { stdout, stderr } = await exec(cmd);
+    console.log(stdout);
+    console.log(stderr);
+
+    if (stdout.trim() == `destroying instance ${machineId}.`) {
+        return true;
+    } else if (nRetries > 0) {
+        console.log(`Retrying DESTROY on ${machineId}`);
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+        return destroyInstance(machineId, nRetries - 1);
     }
+    return false;
 }
