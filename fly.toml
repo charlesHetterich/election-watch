@@ -4,6 +4,6 @@ primary_region = "fra"
 [build]
 
 [[vm]]
-  memory = "2048mb"
+  memory = "1024mb"
   cpu_kind = "shared"
   cpus = 1
