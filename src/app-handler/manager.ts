@@ -54,9 +54,9 @@ export class AppManager {
                       //               await app.trigger(payload, context)
                       //       )
                       //       .forEach((payload) => app.lambda(payload, context))
-                      app.watching.call().forEach(async (payload) => {
-                          if (await app.trigger(payload, context)) {
-                              app.lambda(payload, context);
+                      app.watching.call().forEach(async (data) => {
+                          if (await app.trigger(data.payload, context)) {
+                              app.lambda(data.payload, context);
                           }
                       })
                     : app.watching.call().forEach(async (payload) => {

@@ -1,7 +1,8 @@
 import { dot } from "@polkadot-api/descriptors";
 import { Context, Observables, Payload, workers } from "@lambdas/app-support";
 
-export const watching = Observables.event.Balances.Transfer;
+export const watching =
+    Observables.event.ElectionProviderMultiPhase.PhaseTransitioned;
 export const description = `
 Once per day when the \`Signed\` phase of the npos election cycle begins, spin up a *vast.ai* worker to calculate & submit an election solution using a parameterized reinforcement learning model.
 
