@@ -12,7 +12,7 @@
       }
     },
 
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "tests/tests.ts"],
     "ts-node": {
       "esm": true
     }

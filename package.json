@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "npx tsx src/index.ts",
-    "test": "npx tsx src/tests.ts",
+    "testup": "nohup npx @acala-network/chopsticks --endpoint wss://polkadot-rpc.dwellir.com --block 25895028 >/dev/null 2>&1 &",
+    "test": "vitest",
+    "testdown": "pgrep -f \"@acala-network/chopsticks\" | xargs kill",
     "build": "tsc",
     "postinstall": "papi generate"
   },
@@ -15,7 +17,8 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.3"
   },
   "dependencies": {
     "@polkadot-api/descriptors": "file:.papi/descriptors",
