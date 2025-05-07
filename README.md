@@ -69,8 +69,6 @@ We include a `Dockerfile` & `fly.toml` for easy deployment to [fly.io](https://f
 brew install flyctl
 ```
 
-<br>
-
 The first time you run this, you will be prompted to login and connect your credit card. _I think_ that I've set up the settings s.t. you won't be charged anything.
 
 ```bash
@@ -82,8 +80,6 @@ fly scale count 1 -y # scale downn to single node
 # shut down
 fly apps destroy substrate-lambdas -y
 ```
-
-<br><br>
 
 # Apps
 Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the following four variables defined:
