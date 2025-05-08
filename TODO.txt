@@ -1,22 +1,45 @@
 - Generalize to allow apps on any chain (currently polkadot relay-chain is hardcoded several places)
 
-- Detect apps listening to the same chain/event & batch those processes together (listen once and call all relevant callbacks)
-
-- Allow single apps to listen across multiple events
-
-- Generalize what can be "watched" from Events to any observable type (e.g. updates to a specific storage item).
-
-- Add Typing toolage that makes the data types in `lambda` and `trigger` less verbose on the side of the app developer
-
 - Design such that we can decouple actual apps from this repository, and allow nice "plug-n-play" capability to choose various apps (a.t.m. this is basically a personal repo running my own apps). A tricky part of this will be decoupling app dependencies from "substrate-lambdas" dependencies. Perhaps there is a way to define app dependencies inside of app folders & then dynamically install these on launch.
 
 - Give App Context for logs/errors emitted from an app (detect through matching function based on callstack? possible in ts? need "macros"?)
 
-scratch todo
-- maybe app validation can be run as a compile-time script? this way more sophisitcated type checks are possible (and maybe gather more general meta-data for each app)
-
 - integrate [Grafana](https://grafana.com/)
+
 - integrate [libcloud](https://github.com/apache/libcloud) for unified access to popular cloud providers
 
 - containerize runtime in [dino](https://deno.com/) with restricted access
    - figure out how to securely inject custom `host` functions into apps with privilaged OS access
+
+scratch todo
+- maybe app validation can be run as a compile-time script? this way more sophisitcated type checks are possible (and maybe gather more general meta-data for each app)
+
+### PAPI issues:
+- seems to be a small but gradual dataleak. smoldot layer?
+
+- Figure out this very infrequent PAPI/smoldot error [
+EXAMPLE 1 -----------------------------------------------------------------------------------------------------------------------
+[runtime-polkadot] Successfully compiled runtime. Spec version: 1004001. Size of `:code`: 1.8 MiB.
+[smoldot] The task named `runtime-polkadot` has occupied the CPU for an unreasonable amount of time (235ms).
+[smoldot] The task named `runtime-polkadot` has occupied the CPU for an unreasonable amount of time (630ms).
+[runtime-polkadot] Finalized block runtime ready. Spec version: 1004001. Size of `:code`: 1.8 MiB.
+[runtime-polkadot] Successfully compiled runtime. Spec version: 1004001. Size of `:code`: 1.8 MiB.
+/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/polkadot-api/node_modules/@polkadot-api/observable-client/src/chainHead/enhancers/withStopRecovery.ts:38
+              observer.error(new BlockNotPinnedError(hash, label))
+                             ^
+
+BlockNotPinnedError: Block 0xb0aae59bf951f8cdcb4dbb009b15d07bbf1a9f87a5b714fdda7711ea0479d97f is not pinned (stop-storage)
+    at Object.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/polkadot-api/node_modules/@polkadot-api/observable-client/src/chainHead/enhancers/withStopRecovery.ts:38:30)
+    at ConsumerObserver.ConsumerObserver.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:155:25)
+    at SafeSubscriber.Subscriber._next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:113:22)
+    at SafeSubscriber.Subscriber.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:71:12)
+    at <anonymous> (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subject.ts:67:20)
+    at Object.errorContext (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/util/errorContext.ts:29:5)
+    at ReplaySubject.Subject.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subject.ts:60:5)
+    at ReplaySubject.ReplaySubject.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/ReplaySubject.ts:65:15)
+    at Object.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/operators/share.ts:225:33)
+    at ConsumerObserver.ConsumerObserver.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:155:25)
+
+Node.js v23.10.0
+---------------------------------------------------------------------------------------------------------------------------------
+]

@@ -30,7 +30,6 @@ async function loadApp(
         const appModule = (
             await import(path.join(appsDir, appName, "index.ts"))
         ).default as TAppModule<string[]>;
-        console.log(`THE MODULE: ${appModule.routes}`);
 
         // Configure application from module
         app.description = appModule.description.trim();

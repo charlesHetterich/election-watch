@@ -1,4 +1,4 @@
-![Title](./res/thumbnail.png)
+![Title](./res/banner.png)
 
 Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening for ***\<trigger\>*** is *computationally inexpensive* but requires **something to always be on**. Doing ***\<thing\>*** may be *computationally expensive* but only requires **on-demand availability**.
 
