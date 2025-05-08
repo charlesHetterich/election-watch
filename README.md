@@ -109,7 +109,8 @@ export default App(description, {
 > - Pay for & launch external GPU-server workloads
 > - Some chain-reaction of events triggering other events
 > - Extensive & highly customizable notification services
-> - Self-hosted general tax data aggregator
+> - tax data aggregator
+> - Fully self-hosted messaging (chain is only used for authenticity. Messages are just transient event emissions & no on-chain storage is required.)
 >
 >which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 ...
