@@ -48,8 +48,8 @@ export type Payload<Path extends readonly string[] | string> = DeepLookup<
     Path
 >;
 
-interface TConfig<WP extends string> {
-    watchPath: WP;
+export interface TRoute<WP extends string> {
+    watching: WP;
     trigger: (
         payload: Payload<WP>,
         context: Context<typeof dot>
@@ -59,8 +59,20 @@ interface TConfig<WP extends string> {
         context: Context<typeof dot>
     ) => void | Promise<void>;
 }
-export function Config<WP extends string>(config: TConfig<WP>): TConfig<WP> {
-    return config;
+
+export interface TAppModule<WPs extends string[]> {
+    description: string;
+    routes: { [K in keyof WPs]: TRoute<WPs[K]> };
+}
+
+export function App<WPs extends string[]>(
+    description: string,
+    ...routes: { [K in keyof WPs]: TRoute<WPs[K]> }
+): TAppModule<WPs> {
+    return {
+        description,
+        routes: routes,
+    };
 }
 
 type PathMap<T, P extends string = ""> = {

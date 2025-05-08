@@ -82,27 +82,23 @@ fly apps destroy substrate-lambdas -y
 ```
 
 # Apps
-Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the following four variables defined:
+Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the default export defined with a `description` & any number of `routes`, using the given `App` builder. ***Example:***
 ```ts
-import { dot } from "@polkadot-api/descriptors";
-import { Context, Payload, Observables } from "@lambdas/app-support";
+import { App, Observables } from "@lambdas/app-support";
 
-export const watching = Observables.event.Something.ImWatching;
-export const description = "Description of how this app works & what it does";
+const description = `
+Description of how this app works & what it does
+`;
 
-export function trigger(
-    content: Payload<typeof watching>,
-    context: Context<typeof dot>
-): boolean {
-    // custom filtering . . .
-}
-
-export function lambda(
-    content: Payload<typeof watching>,
-    context: Context<typeof dot>
-) {
-    // do something upon triggering . . .
-}
+export default App(description, {
+    watching: Observables.event.Something.ImWatching,
+    trigger: (payload, context) => {
+        // do something upon triggering . . .
+    },
+    lambda: (payload, context) => {
+        // do something upon triggering . . .
+    },
+});
 ```
 
 ## Hardware Campaign & Long-Term Vision

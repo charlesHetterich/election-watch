@@ -8,40 +8,43 @@ import { getSmProvider } from "polkadot-api/sm-provider";
 import { chainSpec } from "polkadot-api/chains/polkadot"; // Can select other chains (kusama, westend, etc. here)
 import { start } from "polkadot-api/smoldot";
 
-import { AppModule, Watching, MetaApp } from "./app";
+import { LambdaApp, handlerFromRoute } from "./app";
 import { AppManager } from "./manager";
+import { TAppModule } from "../app-support/type-helper";
 
 const appsDir = path.join(process.cwd(), "src/apps");
-// TODO! decide if I want something like this which would make apps visible at compile-time (not so sure this is useful though...)
-// > the main help this offers is type-checking of modules @ compile-time, instead of them blowing up when they actually trigger
-// const modules = import.meta.glob("../apps/**/index.ts", { eager: true });
 
 /**
- * Try to load a `LambdaApp` from module given by `appName`
+ * Try to load a `LambdaApp` from module given by `appName`. If any handler fails
+ * to load, we consider the entire app to be failed.
  *
  * @returns The `MetaApp` of a *loaded or failed* app
  */
 async function loadApp(
     appName: string,
     api: TypedApi<typeof dot>
-): Promise<MetaApp> {
+): Promise<LambdaApp> {
+    let app = new LambdaApp(appName, "", true, [], null, []);
     try {
-        const { watching, description, trigger, lambda } = (await import(
-            path.join(appsDir, appName, "index.ts")
-        )) as AppModule;
-        return new MetaApp(
-            appName,
-            {
-                description: description.trim(),
-                watching: new Watching(watching, api),
-                trigger: trigger,
-                lambda: lambda,
-            },
-            true
+        // Load & expect `TAppModule`
+        const appModule = (
+            await import(path.join(appsDir, appName, "index.ts"))
+        ).default as TAppModule<string[]>;
+        console.log(`THE MODULE: ${appModule.routes}`);
+
+        // Configure application from module
+        app.description = appModule.description.trim();
+        app.watchPaths = [
+            ...new Set(appModule.routes.map((route) => route.watching)),
+        ];
+        app.handlers = appModule.routes.map((route) =>
+            handlerFromRoute(route, api)
         );
     } catch (e) {
-        return new MetaApp(appName, undefined, false, [e.message]);
+        app.alive = false;
+        app.logs.push(`Error loading ${appName}: ${e.stack}`);
     }
+    return app;
 }
 
 /**
@@ -50,16 +53,19 @@ async function loadApp(
  * @returns `AppManager` containing all apps
  */
 export async function loadApps() {
-    // Create our light client
-    // TODO! in the future we should have a dynamic set of apis given by which
-    //       chains each app expects
+    // TODO! Move this— light client setup does not belong here
+    //
+    //       We do want TypedAPI loading here though because eventually
+    //       which API(s) we load will be given by each app
+    // - - - -
     const smoldot = start();
     const chain = await smoldot.addChain({ chainSpec });
     const client = createClient(getSmProvider(chain));
     const papi = client.getTypedApi(dot);
+    // - - - -
 
     // Load all apps
-    let apps: MetaApp[] = [];
+    let apps: LambdaApp[] = [];
     if (fs.existsSync(appsDir)) {
         const appNames = fs
             .readdirSync(appsDir, { withFileTypes: true })

@@ -3,23 +3,26 @@ import { TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
 
 import { Context } from "@lambdas/app-support";
-import { WatchType, MetaApp } from "./app";
+import { LambdaApp } from "./app";
 
 /**
- * Handles overarching app logic such as batching triggers across multiple apps watching the same observable
+ * Handles overarching app logic & management
  *
  * @property apps - The list of apps to manage
  * @property api  - The API to use for the apps
  */
 export class AppManager {
-    constructor(private apps: MetaApp[], private api: TypedApi<typeof dot>) {}
+    constructor(private apps: LambdaApp[], private api: TypedApi<typeof dot>) {}
 
-    private logLaunchStatus({ app, ...meta }: MetaApp) {
-        if (!meta.alive) {
+    /**
+     * Logs the health & details of a loaded app.
+     */
+    private logLaunchStatus(app: LambdaApp) {
+        if (!app.alive) {
             console.log(
-                "\n" + "[" + chalk.red("x") + "]  " + chalk.bgRed(meta.name)
+                "\n" + "[" + chalk.red("x") + "]  " + chalk.bgRed(app.name)
             );
-            meta.logs.forEach((l) =>
+            app.logs.forEach((l) =>
                 console.log("[" + chalk.red("Error") + "] " + l)
             );
             return;
@@ -29,41 +32,27 @@ export class AppManager {
                 "[" +
                 chalk.green("ok") +
                 "] " +
-                chalk.green(meta.name) +
+                chalk.green(app.name) +
                 "    " +
                 chalk.white.bold("watching ") +
-                chalk.grey(app.watching.callPth)
+                chalk.grey(app.watchPaths)
         );
         console.log(chalk.grey(app.description) + "\n");
     }
 
     async launch() {
         const context = new Context(this.api);
-
         console.log(
             "\n" + chalk.yellowBright.bold("Building & launching apps")
         );
-        this.apps.forEach(({ app, ...meta }) => {
-            this.logLaunchStatus({ app, ...meta });
-            if (meta.alive) {
-                app.watching.type == WatchType.EVENT
-                    ? // TODO! sort out why top option doesn't work, or switch all to latter
-                      // ? app.watching
-                      //       .call(
-                      //           async (payload) =>
-                      //               await app.trigger(payload, context)
-                      //       )
-                      //       .forEach((payload) => app.lambda(payload, context))
-                      app.watching.call().forEach(async (data) => {
-                          if (await app.trigger(data.payload, context)) {
-                              app.lambda(data.payload, context);
-                          }
-                      })
-                    : app.watching.call().forEach(async (payload) => {
-                          if (await app.trigger(payload, context)) {
-                              app.lambda(payload, context);
-                          }
-                      });
+
+        // Launch all apps
+        this.apps.forEach((app) => {
+            this.logLaunchStatus(app);
+            if (app.alive) {
+                app.handlers.forEach((handler) => {
+                    handler(context);
+                });
             }
         });
     }

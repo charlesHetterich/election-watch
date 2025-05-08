@@ -1,85 +1,69 @@
 import { TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
-import { Payload, Context } from "@lambdas/app-support";
+import { Context, TRoute } from "@lambdas/app-support";
 
 export enum WatchType {
     EVENT = "event",
     QUERY = "query",
 }
+type RouteHandler = (context: Context<any>) => void;
 
 /**
- * Wrapper around an `observable` we would like to watch
- *
- * @property call    — The `observable` we intend to watch
- * @property type    - The type of the observable
- * @property callPth - The name of the observable given by its call path
+ * Creates a route handler from a route and an API
  */
-export class Watching {
-    call: Function;
-    type: WatchType;
-    callPth: string;
-    constructor(callPth: string, api: TypedApi<typeof dot>) {
-        const pth_arr = callPth.split(".");
-        let call: any = api; // TODO! remove any
-        for (const pth of pth_arr) {
-            call = call[pth];
-        }
-
-        switch (pth_arr[0]) {
-            case "event":
-                this.call = call.watch;
-                this.type = WatchType.EVENT;
-                break;
-            case "query":
-                this.call = call.watchValue;
-                this.type = WatchType.QUERY;
-                break;
-            default:
-                throw new Error(
-                    `Invalid call path ${callPth}. Must start with "event" or "query".`
-                );
-        }
-        this.callPth = callPth;
+export function handlerFromRoute(
+    route: TRoute<any>,
+    api: TypedApi<typeof dot>
+): RouteHandler {
+    // Find raw watchable value
+    const pth_arr = route.watching.split(".");
+    let watchable: any = api; // TODO! remove any
+    for (const pth of pth_arr) {
+        watchable = watchable[pth];
     }
-}
 
-/**
- * The expected structure of an app's exports
- *
- * @property description - The description of the app, given by the description field in the app
- * @property watching    - A path to an observable in the form `path.to.observable`
- * @property trigger     - Filters instances of the event we are watching. Triggers `lambda` when true is returned
- * @property lambda      - The work to do after `trigger` fires
- */
-export type AppModule = {
-    description: string;
-    watching: string;
-    trigger: (payload: Payload<any>, context: Context<any>) => boolean;
-    lambda: (payload: Payload<any>, context: Context<any>) => Promise<any>;
-};
-
-/**
- * Stores lambda app configuration
- *
- * @property watching  reference to the observable we are watching
- */
-export interface LambdaApp extends Omit<AppModule, "watching"> {
-    watching: Watching;
+    // Configure route handler
+    switch (pth_arr[0]) {
+        case WatchType.EVENT:
+            return (context) => {
+                watchable.watch().forEach(async (data) => {
+                    if (await route.trigger(data.payload, context)) {
+                        route.lambda(data.payload, context);
+                    }
+                });
+            };
+        case WatchType.QUERY:
+            return (context) => {
+                watchable.watchValue().forEach(async (payload) => {
+                    if (await route.trigger(payload, context)) {
+                        route.lambda(payload, context);
+                    }
+                });
+            };
+        default:
+            throw new Error(
+                `Invalid call path ${route.watching}. Must start with "event" or "query".`
+            );
+    }
 }
 
 /**
  * Wrapper around `LambdaApp` which stores additional metadata
  *
- * @property name  - The name of the app, given by the directory name
- * @property app   - The `LambdaApp` object
- * @property alive - Whether the app is alive or not
- * @property logs  - The logs of the app
+ * @property name        - The name of the app
+ * @property description - A description of the app
+ * @property alive       - Whether the app is alive or not
+ * @property watchPaths  - The paths that the app is watching
+ * @property handlers    - The handlers for the app
+ * @property logs        - The logs for the app
  */
-export class MetaApp {
+export class LambdaApp {
     constructor(
         public name: string,
-        public app: LambdaApp,
+        public description: string,
         public alive: boolean,
+        public watchPaths: string[],
+        public handlers: RouteHandler[] | null,
         public logs: string[] = []
     ) {}
 }
