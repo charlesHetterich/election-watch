@@ -1,3 +1,5 @@
+- Test Events (configurable test events [like in AWS Lambda](https://aws.amazon.com/tutorials/run-serverless-code/)). Should be stupid simple for app developers to configure.
+
 - Generalize to allow apps on any chain (currently polkadot relay-chain is hardcoded several places)
 
 - Design such that we can decouple actual apps from this repository, and allow nice "plug-n-play" capability to choose various apps (a.t.m. this is basically a personal repo running my own apps). A tricky part of this will be decoupling app dependencies from "substrate-lambdas" dependencies. Perhaps there is a way to define app dependencies inside of app folders & then dynamically install these on launch.

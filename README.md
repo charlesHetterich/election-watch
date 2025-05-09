@@ -93,7 +93,7 @@ Description of how this app works & what it does
 export default App(description, {
     watching: Observables.event.Something.ImWatching,
     trigger: (payload, context) => {
-        // do something upon triggering . . .
+        // do some filtering . . .
     },
     lambda: (payload, context) => {
         // do something upon triggering . . .
@@ -114,6 +114,7 @@ export default App(description, {
 >
 >which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 ...
+You can get a rough idea of a longer term roadmap over on the [project board](https://github.com/users/charlesHetterich/projects/1).
 
 <br><br><br>
 
