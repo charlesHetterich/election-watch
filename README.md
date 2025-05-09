@@ -61,7 +61,9 @@ REPO_NAME=<your-huggingface-repo>
 ```
 
 ### Local
-Just run `npm install` and then `npm start`.
+###### *Prerequisites: [Node.js](https://nodejs.org/en/download/) & [Docker](https://www.docker.com/get-started)*
+
+Just run `setup.sh` and then `npm start`.
 
 ### Fly.io
 We include a `Dockerfile` & `fly.toml` for easy deployment to [fly.io](https://fly.io/). First install the CLI tool:

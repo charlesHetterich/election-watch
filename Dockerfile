@@ -23,7 +23,7 @@ RUN npx papi add dot -n polkadot && npx papi
 
 RUN npm install
 
-# Copy the rest of the application
+# Copy the rest of the application [todo! be better here]
 COPY . .
 
 # Command to run the application
