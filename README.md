@@ -21,7 +21,7 @@ A core feature of Substrate Lambdas is the ability for apps to launch remote job
 | Platform                                  | Type      | Provider     | Payment Method |Development Status|
 |-|-|-|-|-|
 | [Vast.ai](https://vast.ai/)               | GPU       | Open marketplace |Credit Card ☹️ |⚠️ Experimental
-| [OctaSpace](https://octa.space/)          | GPU       | Open marketplace |Ethereum 🤠 *(In talks for native Polkadot ecosystem support 🥰)* | 🔄 To-do
+| [OctaSpace](https://octa.space/)          | GPU       | Open marketplace |Ethereum 🤠 *(Maybe native Polkadot ecosystem support in future? 🥰)* | 🔄 To-do
 | [Libcloud](https://libcloud.apache.org/)  | CPU/GPU   | Supports [more than 50](https://libcloud.readthedocs.io/en/stable/supported_providers.html) mainstream cloud providers |Credit Card ☹️ | 🔄 To-do
 | *Self | CPU/GPU       | Self-hosted |**--** |🔄 To-do
 
