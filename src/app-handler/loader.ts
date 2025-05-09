@@ -1,12 +1,8 @@
 import fs from "fs";
 import path from "path";
 import chalk from "chalk";
-import { TypedApi } from "polkadot-api";
+import { PolkadotClient, TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
-import { createClient } from "polkadot-api";
-import { getSmProvider } from "polkadot-api/sm-provider";
-import { chainSpec } from "polkadot-api/chains/polkadot"; // Can select other chains (kusama, westend, etc. here)
-import { start } from "polkadot-api/smoldot";
 
 import { LambdaApp, handlerFromRoute } from "./app";
 import { AppManager } from "./manager";
@@ -51,15 +47,10 @@ async function loadApp(
  *
  * @returns `AppManager` containing all apps
  */
-export async function loadApps() {
-    // TODO! Move this— light client setup does not belong here
-    //
-    //       We do want TypedAPI loading here though because eventually
-    //       which API(s) we load will be given by each app
+export async function loadApps(client: PolkadotClient): Promise<AppManager> {
+    // TODO!
+    // eventually which API(s) we load will be given by each app
     // - - - -
-    const smoldot = start();
-    const chain = await smoldot.addChain({ chainSpec });
-    const client = createClient(getSmProvider(chain));
     const papi = client.getTypedApi(dot);
     // - - - -
 
