@@ -1,10 +1,9 @@
-import { dot } from "@polkadot-api/descriptors";
-import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
+import { createClient, PolkadotClient } from "polkadot-api";
 import { getWsProvider } from "polkadot-api/ws-provider/web";
 import { withPolkadotSdkCompat } from "polkadot-api/polkadot-sdk-compat";
-import { launchChopsticks } from "./chopsticks";
+import path from "path";
 
-// await launchChopsticks();
+export const appsDir = path.join(process.cwd(), "tests/mock-apps");
 
 export async function mockClient(): Promise<PolkadotClient> {
     const client = createClient(

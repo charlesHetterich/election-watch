@@ -4,11 +4,48 @@ import chalk from "chalk";
 import { PolkadotClient, TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
 
-import { LambdaApp, handlerFromRoute } from "./app";
+import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppManager } from "./manager";
-import { TAppModule } from "../app-support/type-helper";
+import { TAppModule, TRoute } from "../app-support/type-helper";
 
-const appsDir = path.join(process.cwd(), "src/apps");
+/**
+ * Creates a route handler from a route and an API
+ */
+function handlerFromRoute(
+    route: TRoute<any>,
+    api: TypedApi<typeof dot>
+): RouteHandler {
+    // Find raw watchable value
+    const pth_arr = route.watching.split(".");
+    let watchable: any = api; // TODO! remove any
+    for (const pth of pth_arr) {
+        watchable = watchable[pth];
+    }
+
+    // Configure route handler
+    switch (pth_arr[0]) {
+        case WatchType.EVENT:
+            return (context) => {
+                watchable.watch().forEach(async (data) => {
+                    if (await route.trigger(data.payload, context)) {
+                        route.lambda(data.payload, context);
+                    }
+                });
+            };
+        case WatchType.QUERY:
+            return (context) => {
+                watchable.watchValue().forEach(async (payload) => {
+                    if (await route.trigger(payload, context)) {
+                        route.lambda(payload, context);
+                    }
+                });
+            };
+        default:
+            throw new Error(
+                `Invalid call path ${route.watching}. Must start with "event" or "query".`
+            );
+    }
+}
 
 /**
  * Try to load a `LambdaApp` from module given by `appName`. If any handler fails
@@ -17,6 +54,7 @@ const appsDir = path.join(process.cwd(), "src/apps");
  * @returns The `MetaApp` of a *loaded or failed* app
  */
 async function loadApp(
+    appsDir: string,
     appName: string,
     api: TypedApi<typeof dot>
 ): Promise<LambdaApp> {
@@ -47,7 +85,10 @@ async function loadApp(
  *
  * @returns `AppManager` containing all apps
  */
-export async function loadApps(client: PolkadotClient): Promise<AppManager> {
+export async function loadApps(
+    client: PolkadotClient,
+    appsDir: string
+): Promise<AppManager> {
     // TODO!
     // eventually which API(s) we load will be given by each app
     // - - - -
@@ -64,10 +105,10 @@ export async function loadApps(client: PolkadotClient): Promise<AppManager> {
             )
             .map((dirent) => dirent.name);
         apps = await Promise.all(
-            appNames.map((appName) => loadApp(appName, papi))
+            appNames.map((appName) => loadApp(appsDir, appName, papi))
         );
     } else {
-        console.log(chalk.red("Apps directory not found."));
+        throw new Error(`Apps directory ${appsDir} not found.`);
     }
 
     // Create & return app manager

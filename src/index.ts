@@ -2,9 +2,12 @@ import { createClient } from "polkadot-api";
 import { getSmProvider } from "polkadot-api/sm-provider";
 import { chainSpec } from "polkadot-api/chains/polkadot"; // Can select other chains (kusama, westend, etc. here)
 import { start } from "polkadot-api/smoldot";
+import path from "path";
 
 import { loadApps } from "./app-handler";
 import { SUBSTRATE_LAMBDAS } from "./titles";
+
+const appsDir = path.join(process.cwd(), "src/apps");
 
 async function main() {
     console.log(SUBSTRATE_LAMBDAS);
@@ -15,7 +18,7 @@ async function main() {
     const client = createClient(getSmProvider(chain));
 
     // Load & launch all apps
-    (await loadApps(client)).launch();
+    (await loadApps(client, appsDir)).launch();
 }
 
 main().catch((error) => console.error("Error:", error));
