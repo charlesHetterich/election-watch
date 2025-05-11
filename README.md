@@ -61,7 +61,8 @@ REPO_NAME=<your-huggingface-repo>
 ```
 
 ### Local
-###### *Prerequisites: [Node.js](https://nodejs.org/en/download/) & [Docker](https://www.docker.com/get-started)*
+###### *Prerequisites: [Node.js](https://nodejs.org/en/download/) & [Python](https://www.python.org/)*
+```bash
 
 Just run `setup.sh` and then `npm start`.
 
@@ -102,6 +103,7 @@ export default App(description, {
     },
 });
 ```
+You can refer to the list of supported [known chains](https://github.com/polkadot-api/polkadot-api/tree/main/packages/known-chains).
 
 ## Hardware Campaign & Long-Term Vision
 > *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). Hardware-wise, think of something like an Amazon Alexa. I feel like this product should be pretty feasible.
@@ -116,6 +118,7 @@ export default App(description, {
 >
 >which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 ...
+
 You can get a rough idea of a longer term roadmap over on the [project board](https://github.com/users/charlesHetterich/projects/1).
 
 <br><br><br>
