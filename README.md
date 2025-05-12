@@ -62,7 +62,6 @@ REPO_NAME=<your-huggingface-repo>
 
 ### Local
 ###### *Prerequisites: [Node.js](https://nodejs.org/en/download/) & [Python](https://www.python.org/)*
-```bash
 
 Just run `setup.sh` and then `npm start`.
 
