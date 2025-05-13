@@ -1,5 +1,6 @@
 .env
 .github/
+bin/
 .papi
 
 node_modules/

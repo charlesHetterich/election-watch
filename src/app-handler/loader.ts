@@ -1,11 +1,9 @@
 import fs from "fs";
 import path from "path";
-import chalk from "chalk";
-import { PolkadotClient, TypedApi } from "polkadot-api";
-import { dot } from "@polkadot-api/descriptors";
+import { TypedApi } from "polkadot-api";
 
 import { LambdaApp, RouteHandler, WatchType } from "./app";
-import { AppManager } from "./manager";
+import { AppsManager } from "./manager";
 import { TAppModule, TRoute } from "../app-support/type-helper";
 
 /**
@@ -13,11 +11,11 @@ import { TAppModule, TRoute } from "../app-support/type-helper";
  */
 function handlerFromRoute(
     route: TRoute<any>,
-    api: TypedApi<typeof dot>
+    api: TypedApi<any>
 ): RouteHandler {
     // Find raw watchable value
     const pth_arr = route.watching.split(".");
-    let watchable: any = api; // TODO! remove any
+    let watchable: any = api;
     for (const pth of pth_arr) {
         watchable = watchable[pth];
     }
@@ -51,12 +49,12 @@ function handlerFromRoute(
  * Try to load a `LambdaApp` from module given by `appName`. If any handler fails
  * to load, we consider the entire app to be failed.
  *
- * @returns The `MetaApp` of a *loaded or failed* app
+ * Both successful & failed apps are added to `manager`
  */
 async function loadApp(
     appsDir: string,
     appName: string,
-    api: TypedApi<typeof dot>
+    manager: AppsManager
 ): Promise<LambdaApp> {
     let app = new LambdaApp(appName, "", true, [], null, []);
     try {
@@ -64,6 +62,8 @@ async function loadApp(
         const appModule = (
             await import(path.join(appsDir, appName, "index.ts"))
         ).default as TAppModule<string[]>;
+        const chainID = "polkadot"; // TODO! get chainID from appModule
+        const api = await manager.getAPI(chainID);
 
         // Configure application from module
         app.description = appModule.description.trim();
@@ -74,43 +74,37 @@ async function loadApp(
             handlerFromRoute(route, api)
         );
     } catch (e) {
+        // Mark the app as dead if any errors occur
         app.alive = false;
         app.logs.push(`Error loading ${appName}: ${e.stack}`);
     }
+
+    // Add the app to the manager
+    manager.apps.push(app);
     return app;
 }
 
 /**
- * Load all apps from the `apps` directory
+ * Load all apps from the `appsDir` directory
  *
- * @returns `AppManager` containing all apps
+ * @returns `AppsManager` containing all apps
  */
-export async function loadApps(
-    client: PolkadotClient,
-    appsDir: string
-): Promise<AppManager> {
-    // TODO!
-    // eventually which API(s) we load will be given by each app
-    // - - - -
-    const papi = client.getTypedApi(dot);
-    // - - - -
-
-    // Load all apps
+export async function loadApps(appsDir: string, manager: AppsManager) {
     let apps: LambdaApp[] = [];
     if (fs.existsSync(appsDir)) {
+        // Find all apps in `appsDir`
         const appNames = fs
             .readdirSync(appsDir, { withFileTypes: true })
             .filter(
                 (dirent) => dirent.isDirectory() && !dirent.name.startsWith("_")
             )
             .map((dirent) => dirent.name);
+
+        // Load all apps
         apps = await Promise.all(
-            appNames.map((appName) => loadApp(appsDir, appName, papi))
+            appNames.map((appName) => loadApp(appsDir, appName, manager))
         );
     } else {
         throw new Error(`Apps directory ${appsDir} not found.`);
     }
-
-    // Create & return app manager
-    return new AppManager(apps, papi);
 }

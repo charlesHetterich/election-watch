@@ -1,18 +1,77 @@
 import chalk from "chalk";
-import { TypedApi } from "polkadot-api";
+import { start } from "polkadot-api/smoldot";
+import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
 import { dot } from "@polkadot-api/descriptors";
+import * as descriptors from "@polkadot-api/descriptors";
+import * as chains from "polkadot-api/chains";
 
 import { Context } from "@lambdas/app-support";
 import { LambdaApp } from "./app";
+import { Chain, Client } from "polkadot-api/smoldot";
+import { getSmProvider } from "polkadot-api/sm-provider";
+
+import { getRelayId, isRelay } from "./known-chains";
 
 /**
  * Handles overarching app logic & management
  *
- * @property apps - The list of apps to manage
- * @property api  - The API to use for the apps
+ * @property lightClient - A smoldot light client
+ * @property relayChains - Relay chains supporting apps for this manager
+ * @property apis        - The collection of `TypedAPI`s being used across all apps
+ * @property apps        - The list of apps to manage
  */
-export class AppManager {
-    constructor(private apps: LambdaApp[], private api: TypedApi<typeof dot>) {}
+export class AppsManager {
+    private lightClient: Client;
+    private relayChains: Record<string, Chain> = {};
+    private apis: Record<string, TypedApi<any>> = {};
+    public apps: LambdaApp[] = [];
+
+    constructor() {
+        this.lightClient = start();
+    }
+
+    /**
+     * Get the `TypedAPI` for a given `chainId`. Add this chain,
+     * RPC client, & API to the manager if it doesn't exist yet.
+     */
+    public async getAPI(chainId: string): Promise<TypedApi<any>> {
+        // Return already created API if it exists.
+        // Otherwise create the chain & give its API.
+        if (this.apis[chainId]) {
+            return this.apis[chainId];
+        }
+
+        // Ensure the chainId is valid
+        const descriptor = descriptors[chainId];
+        if (!descriptor) {
+            throw new Error(
+                `No descriptor found for chainId: ${chainId}. Please add it using the \`npx papi add\` command.`
+            );
+        }
+
+        // Ensure corresponding relay chain exists
+        const relayId = getRelayId(chainId);
+        if (!this.relayChains[relayId]) {
+            this.relayChains[relayId] = await this.lightClient.addChain({
+                chainSpec: chains[relayId],
+            });
+        }
+
+        // If we're adding a relay chain—  use the chain we just created.
+        // Otherwise, this is a parachain— create its chain now
+        let newChain = this.relayChains[relayId];
+        if (!isRelay(chainId)) {
+            newChain = await this.lightClient.addChain({
+                chainSpec: chains[chainId],
+                potentialRelayChains: Object.values(this.relayChains),
+            });
+        }
+
+        // Create RPC client for this chain, grab its typed API, & return it
+        const newClient = createClient(getSmProvider(newChain));
+        this.apis[chainId] = newClient.getTypedApi(descriptor);
+        return this.apis[chainId];
+    }
 
     /**
      * Logs the health & details of a loaded app.
@@ -41,7 +100,7 @@ export class AppManager {
     }
 
     async launch() {
-        const context = new Context(this.api);
+        const context = new Context(this.apis["polkadot"]); // TODO! update once we update `appModule` definition to include chain dependencies
         console.log(
             "\n" + chalk.yellowBright.bold("Building & launching apps")
         );
