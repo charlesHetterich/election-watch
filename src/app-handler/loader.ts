@@ -4,7 +4,7 @@ import { TypedApi } from "polkadot-api";
 
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
-import { TAppModule, TRoute } from "../app-support/type-helper";
+import { TAppModule, TRoute } from "../app-support/types";
 
 /**
  * Creates a route handler from a route and an API
