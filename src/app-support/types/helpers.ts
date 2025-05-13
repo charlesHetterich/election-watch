@@ -1,6 +1,6 @@
 import { dot } from "@polkadot-api/descriptors";
 import { PlainDescriptor } from "polkadot-api";
-import { Context } from "./context";
+import { Context } from "../context";
 
 /**
  * Builds tree of descriptor types
