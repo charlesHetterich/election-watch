@@ -4,17 +4,17 @@ import { TypedApi } from "polkadot-api";
 
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
-import { TAppModule, TRoute } from "../app-support/types";
+import { WatchPath, TAppModule, TRoute } from "../app-support/types";
 
 /**
  * Creates a route handler from a route and an API
  */
-function handlerFromRoute(
-    route: TRoute<any>,
+async function handlerFromRoute<WP extends WatchPath>(
+    route: TRoute<WP>,
     api: TypedApi<any>
-): RouteHandler {
+): Promise<RouteHandler> {
     // Find raw watchable value
-    const pth_arr = route.watching.split(".");
+    const pth_arr = route.watching.split(".").slice(1); // Remove chain ID (NOTE! we will likely move position of chain ID in which case this also needs to be updated)
     let watchable: any = api;
     for (const pth of pth_arr) {
         watchable = watchable[pth];
@@ -61,7 +61,7 @@ async function loadApp(
         // Load & expect `TAppModule`
         const appModule = (
             await import(path.join(appsDir, appName, "index.ts"))
-        ).default as TAppModule<string[]>;
+        ).default as TAppModule<WatchPath[]>;
         const chainID = "polkadot"; // TODO! get chainID from appModule
         const api = await manager.getAPI(chainID);
 
@@ -70,8 +70,10 @@ async function loadApp(
         app.watchPaths = [
             ...new Set(appModule.routes.map((route) => route.watching)),
         ];
-        app.handlers = appModule.routes.map((route) =>
-            handlerFromRoute(route, api)
+        app.handlers = await Promise.all(
+            appModule.routes.map(
+                async (route) => await handlerFromRoute(route, api)
+            )
         );
     } catch (e) {
         // Mark the app as dead if any errors occur
