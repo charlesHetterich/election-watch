@@ -2,6 +2,7 @@
 .github/
 bin/
 .papi
+dummy/
 
 node_modules/
 *lock.json

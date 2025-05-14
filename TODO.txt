@@ -21,6 +21,7 @@ scratch todo
 
 - Figure out this very infrequent PAPI/smoldot error [
 EXAMPLE 1 -----------------------------------------------------------------------------------------------------------------------
+```
 [runtime-polkadot] Successfully compiled runtime. Spec version: 1004001. Size of `:code`: 1.8 MiB.
 [smoldot] The task named `runtime-polkadot` has occupied the CPU for an unreasonable amount of time (235ms).
 [smoldot] The task named `runtime-polkadot` has occupied the CPU for an unreasonable amount of time (630ms).
@@ -43,5 +44,32 @@ BlockNotPinnedError: Block 0xb0aae59bf951f8cdcb4dbb009b15d07bbf1a9f87a5b714fdda7
     at ConsumerObserver.ConsumerObserver.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:155:25)
 
 Node.js v23.10.0
----------------------------------------------------------------------------------------------------------------------------------
+```
+
+EXAMPLE 2 -----------------------------------------------------------------------------------------------------------------------
+```
+[runtime-polkadot] Successfully compiled runtime. Spec version: 1004001. Size of `:code`: 1.8 MiB.
+[smoldot] The task named `runtime-polkadot` has occupied the CPU for an unreasonable amount of time (246ms).
+[smoldot] The task named `runtime-polkadot` has occupied the CPU for an unreasonable amount of time (700ms).
+[runtime-polkadot] Finalized block runtime ready. Spec version: 1004001. Size of `:code`: 1.8 MiB.
+[runtime-polkadot] Successfully compiled runtime. Spec version: 1004001. Size of `:code`: 1.8 MiB.
+/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/polkadot-api/node_modules/@polkadot-api/observable-client/src/chainHead/enhancers/withStopRecovery.ts:38
+              observer.error(new BlockNotPinnedError(hash, label))
+                             ^
+
+
+BlockNotPinnedError: Block 0xb0aae59bf951f8cdcb4dbb009b15d07bbf1a9f87a5b714fdda7711ea0479d97f is not pinned (stop-storage)
+    at Object.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/polkadot-api/node_modules/@polkadot-api/observable-client/src/chainHead/enhancers/withStopRecovery.ts:38:30)
+    at ConsumerObserver.ConsumerObserver.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:155:25)
+    at SafeSubscriber.Subscriber._next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:113:22)
+    at SafeSubscriber.Subscriber.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:71:12)
+    at <anonymous> (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subject.ts:67:20)
+    at Object.errorContext (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/util/errorContext.ts:29:5)
+    at ReplaySubject.Subject.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subject.ts:60:5)
+    at ReplaySubject.ReplaySubject.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/ReplaySubject.ts:65:15)
+    at Object.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/operators/share.ts:225:33)
+    at ConsumerObserver.ConsumerObserver.next (/Users/charleshetterich/code/work/polkadot/util/substrate-lambdas/node_modules/rxjs/src/internal/Subscriber.ts:155:25)
+
+Node.js v23.10.0
+```
 ]
