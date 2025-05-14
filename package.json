@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npx tsx src/index.ts",
-    "testup": "nohup npx @acala-network/chopsticks --endpoint wss://polkadot-rpc.dwellir.com --block 25895028 >/dev/null 2>&1 &",
+    "testup": "nohup npx @acala-network/chopsticks -c ./tests/polkadot.yml >/dev/null 2>&1 &",
     "test": "vitest",
     "testdown": "pgrep -f \"@acala-network/chopsticks\" | xargs kill",
     "build": "tsc",
