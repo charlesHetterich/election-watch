@@ -21,6 +21,6 @@ export default App(description, {
      * Aggregate snapshot data
      */
     lambda: (_, c) => {
-        aggData(c.api);
+        aggData(c.apis.polkadot);
     },
 });

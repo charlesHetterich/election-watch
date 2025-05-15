@@ -10,46 +10,35 @@ import { Context } from "../context";
 export type WatchPath = `${ChainId}.${string}`;
 
 /**
- * Type alias for `DeepLookup` exposed for apps
+ * Extract the `ChainId` and rest of path `string` from a `WatchPath`
  */
-export type Payload<Path extends readonly string[] | string> =
-    Path extends `${infer C}.${infer Rest}`
-        ? C extends ChainId
-            ? DeepLookup<
-                  {
-                      event: DescriptorTree<
-                          (typeof D)[C]["descriptors"]["pallets"]["__event"]
-                      >;
-                      query: DescriptorTree<
-                          (typeof D)[C]["descriptors"]["pallets"]["__storage"]
-                      >;
-                  },
-                  Rest
-              >
-            : never
-        : never;
+export type PartsOf<WP extends WatchPath> =
+    WP extends `${infer C}.${infer Rest}` ? [C, Rest] : never;
+
+/**
+ * The expected type of a payload for a given `WatchPath`
+ */
+export type Payload<WP extends WatchPath> = DeepLookup<
+    {
+        event: DescriptorTree<
+            (typeof D)[PartsOf<WP>[0]]["descriptors"]["pallets"]["__event"]
+        >;
+        query: DescriptorTree<
+            (typeof D)[PartsOf<WP>[0]]["descriptors"]["pallets"]["__storage"]
+        >;
+    },
+    PartsOf<WP>[1]
+>;
 
 export interface TRoute<WP extends WatchPath, WPs extends WatchPath[] = []> {
     watching: WP;
     trigger: (
         payload: Payload<WP>,
-        context: Context<
-            WP extends `${infer C}.${string}`
-                ? C extends ChainId
-                    ? (typeof D)[C]
-                    : never
-                : never
-        >
+        context: Context<PartsOf<WPs[number]>[0]>
     ) => boolean | Promise<boolean>;
     lambda: (
         payload: Payload<WP>,
-        context: Context<
-            WP extends `${infer C}.${string}`
-                ? C extends ChainId
-                    ? (typeof D)[C]
-                    : never
-                : never
-        >
+        context: Context<PartsOf<WPs[number]>[0]>
     ) => void | Promise<void>;
 }
 

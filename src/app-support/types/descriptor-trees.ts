@@ -16,22 +16,23 @@ export type ChainId =
 /**
  * Convert a `ChainId` string to a `VirtualChainId`
  */
-type ToVirtual<S extends string> = S extends `${infer Head}_${infer Tail}`
-    ? Tail extends `${number}${string}`
-        ? `${Head}.${ToVirtual<Tail>}`
-        : `${Head}${Capitalize<ToVirtual<Tail>>}`
-    : S;
+export type ToVirtual<S extends string> =
+    S extends `${infer Head}_${infer Tail}`
+        ? Tail extends `${number}${string}`
+            ? `${Head}.${ToVirtual<Tail>}`
+            : `${Head}${Capitalize<ToVirtual<Tail>>}`
+        : S;
 
 /**
  * Convert a `VirtualChainId` to a `ChainId`
  */
-type FromVirtual<V extends VirtualChainId> = {
+export type FromVirtual<V extends VirtualChainId> = {
     [K in ChainId]: V extends ToVirtual<K> ? K : never;
 }[ChainId];
 /**
  * Convert a `ChainId` to a `VirtualChainId`
  */
-function toVirtual(chainId: ChainId): VirtualChainId {
+export function toVirtual(chainId: ChainId): VirtualChainId {
     return chainId
         .replace(/_([a-z])/g, (_, ch) => ch.toUpperCase())
         .replace(/_/, (_, ch) => ".") as VirtualChainId;
@@ -93,7 +94,7 @@ type ObservablesQueryMap = {
     >;
 };
 export const Observables = await (async () => {
-    /* ------------------ build event ------------------ */
+    // Build event tree
     const eventEntries = await Promise.all(
         knownChains.map(async (id) => {
             const vId = toVirtual(id) as VirtualChainId;
@@ -109,7 +110,7 @@ export const Observables = await (async () => {
     );
     const eventObj = Object.fromEntries(eventEntries) as ObservablesEventMap;
 
-    /* ------------------ build query ------------------ */
+    // Build query tree
     const queryEntries = await Promise.all(
         knownChains.map(async (id) => {
             const vId = toVirtual(id) as VirtualChainId;
@@ -125,6 +126,5 @@ export const Observables = await (async () => {
     );
     const queryObj = Object.fromEntries(queryEntries) as ObservablesQueryMap;
 
-    /* ------------------ result ------------------ */
     return { event: eventObj, query: queryObj } as const;
 })();

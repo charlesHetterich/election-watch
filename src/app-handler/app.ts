@@ -1,4 +1,4 @@
-import { Context } from "@lambdas/app-support";
+import { ChainId, Context, WatchPath } from "@lambdas/app-support";
 
 /**
  * The set of valid root `Observables`
@@ -28,7 +28,8 @@ export class LambdaApp {
         public name: string,
         public description: string,
         public alive: boolean,
-        public watchPaths: string[],
+        public watchPaths: WatchPath[],
+        public chains: ChainId[],
         public handlers: RouteHandler[] | null,
         public logs: string[] = []
     ) {}

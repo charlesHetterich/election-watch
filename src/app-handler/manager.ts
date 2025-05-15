@@ -1,10 +1,15 @@
 import chalk from "chalk";
 import { start } from "polkadot-api/smoldot";
 import { createClient, TypedApi } from "polkadot-api";
-import * as descriptors from "@polkadot-api/descriptors";
+import * as D from "@polkadot-api/descriptors";
 import * as chains from "polkadot-api/chains";
 
-import { Context } from "@lambdas/app-support";
+import {
+    Context,
+    ContextualAPIs,
+    toVirtual,
+    VirtualChainId,
+} from "@lambdas/app-support";
 import { LambdaApp } from "./app";
 import { Chain, Client } from "polkadot-api/smoldot";
 import { getSmProvider } from "polkadot-api/sm-provider";
@@ -41,7 +46,7 @@ export class AppsManager {
         }
 
         // Ensure the chainId is valid
-        const descriptor = descriptors[chainId];
+        const descriptor = D[chainId];
         if (!descriptor) {
             throw new Error(
                 `No descriptor found for chainId: ${chainId}. Please add it using the \`npx papi add\` command.`
@@ -99,7 +104,7 @@ export class AppsManager {
     }
 
     async launch() {
-        const context = new Context(this.apis["polkadot"]); // TODO! update once we update `appModule` definition to include chain dependencies
+        // const context = new Context(this.apis["polkadot"]); // TODO! update once we update `appModule` definition to include chain dependencies
         console.log(
             "\n" + chalk.yellowBright.bold("Building & launching apps")
         );
@@ -108,6 +113,18 @@ export class AppsManager {
         this.apps.forEach((app) => {
             this.logLaunchStatus(app);
             if (app.alive) {
+                const dd = app.chains.reduce((acc, chainId) => {
+                    acc[toVirtual(chainId)] = this.apis[chainId];
+                    return acc;
+                }, {} as Record<VirtualChainId, TypedApi<any>>);
+
+                const context = new Context(
+                    Object.fromEntries(
+                        app.chains.map(
+                            (cid) => [toVirtual(cid), this.apis[cid]] as const
+                        )
+                    ) as ContextualAPIs<(typeof app.chains)[number]>
+                );
                 app.handlers.forEach((handler) => {
                     handler(context);
                 });

@@ -4,7 +4,7 @@ import { TypedApi } from "polkadot-api";
 
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
-import { WatchPath, TAppModule, TRoute } from "../app-support/types";
+import { WatchPath, TAppModule, TRoute, ChainId } from "../app-support/types";
 
 /**
  * Creates a route handler from a route and an API
@@ -62,7 +62,7 @@ async function loadApp(
     appName: string,
     manager: AppsManager
 ): Promise<LambdaApp> {
-    let app = new LambdaApp(appName, "", true, [], null, []);
+    let app = new LambdaApp(appName, "", true, [], [], null, []);
     try {
         // Load & expect `TAppModule`
         const appModule = (
@@ -74,6 +74,9 @@ async function loadApp(
         app.watchPaths = [
             ...new Set(appModule.routes.map((route) => route.watching)),
         ];
+        app.chains = appModule.routes.map(
+            (route) => route.watching.split(".")[0] as ChainId
+        );
         app.handlers = await Promise.all(
             appModule.routes.map(
                 async (route) => await handlerFromRoute(route, manager)
