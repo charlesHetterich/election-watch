@@ -11,11 +11,17 @@ import { WatchPath, TAppModule, TRoute } from "../app-support/types";
  */
 async function handlerFromRoute<WP extends WatchPath>(
     route: TRoute<WP>,
-    api: TypedApi<any>
+    manager: AppsManager
 ): Promise<RouteHandler> {
-    // Find raw watchable value
-    const pth_arr = route.watching.split(".").slice(1); // Remove chain ID (NOTE! we will likely move position of chain ID in which case this also needs to be updated)
-    let watchable: any = api;
+    // NOTE! we will likely move position of chain ID in
+    //       which case this also needs to be updated
+    const watching_tuple = route.watching.split(".");
+    const chainID = watching_tuple[0];
+    const pth_arr = watching_tuple.slice(1);
+
+    // Start at the top this chain's API, and then
+    // traverse properties to the desired observable value
+    let watchable: any = await manager.getAPI(chainID);
     for (const pth of pth_arr) {
         watchable = watchable[pth];
     }
@@ -62,8 +68,6 @@ async function loadApp(
         const appModule = (
             await import(path.join(appsDir, appName, "index.ts"))
         ).default as TAppModule<WatchPath[]>;
-        const chainID = "polkadot"; // TODO! get chainID from appModule
-        const api = await manager.getAPI(chainID);
 
         // Configure application from module
         app.description = appModule.description.trim();
@@ -72,7 +76,7 @@ async function loadApp(
         ];
         app.handlers = await Promise.all(
             appModule.routes.map(
-                async (route) => await handlerFromRoute(route, api)
+                async (route) => await handlerFromRoute(route, manager)
             )
         );
     } catch (e) {

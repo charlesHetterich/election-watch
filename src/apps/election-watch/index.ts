@@ -10,8 +10,7 @@ export default App(description, {
      * Triggers for all phase transition events
      */
     watching:
-        Observables.event("polkadot").ElectionProviderMultiPhase
-            .PhaseTransitioned,
+        Observables.event.polkadot.ElectionProviderMultiPhase.PhaseTransitioned,
     trigger: (_, c) => {
         return true;
     },

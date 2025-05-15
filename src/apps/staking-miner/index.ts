@@ -11,8 +11,7 @@ export default App(description, {
      * Triggers when `Signed` phase begins. This should trigger once per era.
      */
     watching:
-        Observables.event("polkadot").ElectionProviderMultiPhase
-            .PhaseTransitioned,
+        Observables.event.polkadot.ElectionProviderMultiPhase.PhaseTransitioned,
     trigger: (_, c) => {
         return false;
     },

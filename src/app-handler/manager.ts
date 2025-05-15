@@ -1,7 +1,6 @@
 import chalk from "chalk";
 import { start } from "polkadot-api/smoldot";
-import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
-import { dot } from "@polkadot-api/descriptors";
+import { createClient, TypedApi } from "polkadot-api";
 import * as descriptors from "@polkadot-api/descriptors";
 import * as chains from "polkadot-api/chains";
 
