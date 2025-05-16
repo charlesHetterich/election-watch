@@ -1,7 +1,7 @@
 import * as D from "@polkadot-api/descriptors";
 
 import { DeepLookup, DescriptorTree } from "./helpers";
-import { ChainId } from "./descriptor-trees";
+import { ChainId } from "./known-chains";
 import { Context } from "../context";
 
 /**
@@ -10,7 +10,7 @@ import { Context } from "../context";
 export type WatchPath = `${ChainId}.${string}`;
 
 /**
- * Extract the `ChainId` and rest of path `string` from a `WatchPath`
+ * Extract the `ChainId` and rest-of-path: `string` from a `WatchPath`
  */
 export type PartsOf<WP extends WatchPath> =
     WP extends `${infer C}.${infer Rest}` ? [C, Rest] : never;
@@ -30,6 +30,15 @@ export type Payload<WP extends WatchPath> = DeepLookup<
     PartsOf<WP>[1]
 >;
 
+/**
+ * Specifies a single route within an lambda application.
+ *
+ * A route listens to any single `Observable` path and takes some actionupon some conditions being satisfied.
+ *
+ * @property watching - The path to the `Observable` to watch
+ * @property trigger  - Specifies the conditions under which we will take some `lambda` action
+ * @property lambda   - The action to upon `trigger`'s conditions being satisfied
+ */
 export interface TRoute<WP extends WatchPath, WPs extends WatchPath[] = []> {
     watching: WP;
     trigger: (
@@ -42,11 +51,17 @@ export interface TRoute<WP extends WatchPath, WPs extends WatchPath[] = []> {
     ) => void | Promise<void>;
 }
 
+/**
+ * Specifies a complete lambda application as a collection of routes and some peripheral settings.
+ */
 export interface TAppModule<WPs extends WatchPath[]> {
     description: string;
     routes: { [K in keyof WPs]: TRoute<WPs[K], WPs> };
 }
 
+/**
+ * Convenience builder function for specifying a lambda `TAppModule` with built-in type hints.
+ */
 export function App<WPs extends WatchPath[]>(
     description: string,
     ...routes: { [K in keyof WPs]: TRoute<WPs[K], WPs> }

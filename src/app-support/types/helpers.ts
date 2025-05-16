@@ -35,6 +35,9 @@ export type DeepLookup<
         : never
     : T;
 
+/**
+ * Map of all paths in a descriptor tree
+ */
 export type PathMap<T, P extends string = ""> = {
     [K in keyof T]: T[K] extends PlainDescriptor<any>
         ? P extends "" // leaf

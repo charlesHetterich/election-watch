@@ -1,61 +1,11 @@
-import { PathMap } from "./helpers";
 import * as D from "@polkadot-api/descriptors";
-
-/**
- * Set of Id's for all chains with available descriptors
- */
-export type ChainId =
-    | {
-          [K in keyof typeof D]: (typeof D)[K] extends {
-              descriptors: any;
-          }
-              ? K
-              : never;
-      }[keyof typeof D];
-
-/**
- * Convert a `ChainId` string to a `VirtualChainId`
- */
-export type ToVirtual<S extends string> =
-    S extends `${infer Head}_${infer Tail}`
-        ? Tail extends `${number}${string}`
-            ? `${Head}.${ToVirtual<Tail>}`
-            : `${Head}${Capitalize<ToVirtual<Tail>>}`
-        : S;
-
-/**
- * Convert a `VirtualChainId` to a `ChainId`
- */
-export type FromVirtual<V extends VirtualChainId> = {
-    [K in ChainId]: V extends ToVirtual<K> ? K : never;
-}[ChainId];
-/**
- * Convert a `ChainId` to a `VirtualChainId`
- */
-export function toVirtual(chainId: ChainId): VirtualChainId {
-    return chainId
-        .replace(/_([a-z])/g, (_, ch) => ch.toUpperCase())
-        .replace(/_/, (_, ch) => ".") as VirtualChainId;
-}
-
-/**
- * Expose a `VirtualChainId` type for apps selecting chains
- */
-export type VirtualChainId = ToVirtual<ChainId>;
-
-export const knownChains: ChainId[] = (
-    Object.keys(D) as (keyof typeof D)[]
-).filter(
-    (k): k is ChainId =>
-        typeof (D as any)[k] === "object" && "descriptors" in (D as any)[k]
-);
-export const _from_virtual = {} as Record<VirtualChainId, ChainId>;
-for (const chainId of knownChains) {
-    _from_virtual[toVirtual(chainId)] = chainId;
-}
-function fromVirtual(virtualChainId: VirtualChainId): ChainId {
-    return _from_virtual[virtualChainId];
-}
+import { PathMap } from "./helpers";
+import {
+    knownChains,
+    toVirtual,
+    FromVirtual,
+    VirtualChainId,
+} from "./known-chains";
 
 async function buildPaths<T, P extends string>(
     prefix: P,
@@ -99,13 +49,12 @@ export const Observables = await (async () => {
         knownChains.map(async (id) => {
             const vId = toVirtual(id) as VirtualChainId;
             const d = await D[id].descriptors;
-
             const pm = (await buildPaths(
                 `${id}.event`,
                 d.events
             )) as ObservablesEventMap[typeof vId];
 
-            return [vId, pm] as const; //  ←‑ literal key preserved
+            return [vId, pm] as const;
         })
     );
     const eventObj = Object.fromEntries(eventEntries) as ObservablesEventMap;
@@ -115,7 +64,6 @@ export const Observables = await (async () => {
         knownChains.map(async (id) => {
             const vId = toVirtual(id) as VirtualChainId;
             const d = await D[id].descriptors;
-
             const pm = (await buildPaths(
                 `${id}.query`,
                 d.storage

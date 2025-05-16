@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { execSync } from "child_process";
 import { TypedApi } from "polkadot-api";
-import { dot } from "@polkadot-api/descriptors";
+import { polkadot } from "@polkadot-api/descriptors";
 
 // replicate __filename and __dirname
 import { fileURLToPath } from "url";
@@ -39,7 +39,7 @@ function cleanUp() {
     }
 }
 
-export async function aggData(api: TypedApi<typeof dot>) {
+export async function aggData(api: TypedApi<typeof polkadot>) {
     console.log("[1] capturing data...");
     const currentEra =
         (await api.query.Staking.ActiveEra.getValue())?.index ?? 0;
