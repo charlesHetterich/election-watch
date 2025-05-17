@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+      "module": "ESNext",
+      "moduleResolution": "bundler",
+      "target": "ES2020",
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "baseUrl": "src",
+    },
+
+    "include": ["src/**/*"],
+    "ts-node": {
+      "esm": true
+    }
+}
