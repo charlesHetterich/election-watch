@@ -1,21 +1,26 @@
-import { describe, expect, it, MockInstance, vi } from "vitest";
-import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
-import { mnemonicGenerate } from "@polkadot/util-crypto";
-import { LambdaApp, loadApps } from "@lambdas/app-handler";
-import { appsDir, mockClient } from "./mock";
+import {
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    MockInstance,
+    vi,
+} from "vitest";
+import { Keyring } from "@polkadot/api";
+import { AppsManager, LambdaApp, loadApps } from "@lambdas/app-handler";
+import { appsDir, mockGetAPI } from "./mock";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import fs from "fs";
 import path from "path";
-import { TAppModule, TRoute } from "@lambdas/app-support";
+import { TAppModule, WatchPath } from "@lambdas/app-support";
 import { getPolkadotSigner } from "polkadot-api/signer";
+import { Binary } from "polkadot-api";
+import { cryptoWaitReady } from "@polkadot/util-crypto";
 
-function getNewSigner() {
-    const mnemonic = mnemonicGenerate();
+function getNewSigner(seed: string) {
     const keyring = new Keyring({ type: "sr25519" });
-    const pair = keyring.addFromUri("//Alice", /*meta*/ {}, "sr25519");
-    // const miniSecret = entropyToMiniSecret(mnemonicToEntropy(DEV_PHRASE));
-    // const derive = sr25519CreateDerive(miniSecret);
-    // const keypair = derive("//Alice");
+    const pair = keyring.addFromUri(`//${seed}`, {}, "sr25519");
     return {
         address: pair.address,
         signer: getPolkadotSigner(
@@ -24,20 +29,6 @@ function getNewSigner() {
             (data: Uint8Array) => pair.sign(data)
         ),
     };
-}
-
-function _getNewSigner() {
-    // Generate the key using hdkd
-    // const miniSecret = entropyToMiniSecret(mnemonicToEntropy(DEV_PHRASE));
-    // const derive = sr25519CreateDerive(miniSecret);
-    // const keypair = derive("//Alice");
-
-    // // Convert to a format that polkadot-api expects
-    // return getPolkadotSigner(keypair.publicKey, "Sr25519", keypair.sign);
-    const keyring = new Keyring({ type: "sr25519" });
-    // Add Alice using the development mnemonic
-    const alice = keyring.addFromUri("//Alice");
-    return alice;
 }
 
 /**
@@ -56,7 +47,7 @@ async function getSpiedOnRoutes() {
         try {
             const appModule = (
                 await import(path.join(appsDir, appName, "index.ts"))
-            ).default as TAppModule<string[]>;
+            ).default as TAppModule<WatchPath[]>;
 
             acc[appName] = appModule.routes.map((route) => {
                 return {
@@ -72,18 +63,24 @@ async function getSpiedOnRoutes() {
 }
 
 describe("Substrate Lambdas Client", async () => {
-    const client = await mockClient();
+    beforeAll(async () => {
+        await cryptoWaitReady();
+    }, 20000);
 
     describe("loader", async () => {
+        let manager: AppsManager;
+        beforeEach(() => {
+            manager = new AppsManager();
+        });
+
         it("should throw an error on non-existed appsDir", async () => {
             await expect(() =>
-                loadApps(client, "invalid-path")
+                loadApps("invalid-path", manager)
             ).rejects.toBeDefined();
         });
 
         it("should find apps in valid `appsDir` correctly", async () => {
-            const manager = await loadApps(client, appsDir);
-            expect(manager).toBeDefined();
+            await loadApps(appsDir, manager);
             expect(manager["apps"].map((app) => app.name)).toContain(
                 "no-index"
             );
@@ -91,7 +88,7 @@ describe("Substrate Lambdas Client", async () => {
 
         it("should load all valid/invalid apps correctly", async () => {
             // Load all apps
-            const manager = await loadApps(client, appsDir);
+            await loadApps(appsDir, manager);
             const apps = manager["apps"].reduce((acc, app) => {
                 acc[app.name] = app;
                 return acc;
@@ -115,71 +112,34 @@ describe("Substrate Lambdas Client", async () => {
 
     describe("loaded apps", async () => {
         const routes = await getSpiedOnRoutes();
-        const alice = getNewSigner();
-        const bob = getNewSigner();
+        const alice = getNewSigner("Alice");
+        const bob = getNewSigner("Bob");
+        const manager = new AppsManager();
+        manager.getAPI = mockGetAPI;
 
-        const manager = await loadApps(client, appsDir);
+        await loadApps(appsDir, manager);
         const apps = manager["apps"].reduce((acc, app) => {
             acc[app.name] = app;
             return acc;
         }, {}) as Record<string, LambdaApp>;
 
-        it("should react to the Observable they are watching", async () => {
-            console.log("HELLOOO");
-
-            await manager.launch();
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            // manager["api"].apis.
-
-            // await new Promise((resolve) => setTimeout(resolve, 4000));
-            manager["api"].event.Balances.Transfer.watch().subscribe((e) => {
-                console.log("Event triggered");
-                console.log(e);
-            });
-
-            manager["api"].tx.Balances.transfer_allow_death({
-                // source: MultiAddress.Id(alice.address),
-                dest: MultiAddress.Id(bob.address),
-                value: 1000n,
+        beforeAll(async () => {
+            // Submit a remark block so we start listening to events during a *mostly* empty block
+            await manager["apis"].polkadot.tx.System.remark({
+                remark: Binary.fromText("hello"),
             }).signAndSubmit(alice.signer);
-            // .subscribe({
-            //     next: (e) => {
-            //         console.log(e.type);
-            //         if (e.type === "txBestBlocksState") {
-            //             console.log(
-            //                 "The tx is now in a best block, check it out:"
-            //             );
-            //             console.log(
-            //                 `https://localhost:8000/extrinsic/${e.txHash}`
-            //             );
-            //         }
-            //     },
-            //     error: console.error,
-            //     complete() {
-            //         // client.destroy();
-            //         // smoldot.terminate();
-            //     },
-            // });
+            await manager.launch();
+        }, 20000);
 
-            // expect(MultiAddress.Id(alice.publicKey.toString())).toContain("5");
-            // const alicePublicKeyHex = Buffer.from(
-            //     alice.publicKey.buffer
-            // ).toString("hex");
-            // expect(alice).toEqual("0a"); // Assuming 10 in hex is "0a"
-            // expect(alice.address).toEqual(
-            //     "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
-            // ); // Replace with actual address
-            // expect(
-            //     await manager["api"].query.System.Account.getValue(
-            //         alice.address
-            //     )
-            // ).toEqual(1000n);
-            // vi.spy;
-            // await new Promise((resolve) => setTimeout(resolve, 2000));
-            // routes["single-event"][0].trigger.mockClear();
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
+        it("should react to the Observable they are watching", async () => {
+            await manager["apis"].polkadot.tx.Balances.transfer_allow_death({
+                dest: MultiAddress.Id(bob.address),
+                value: 10_000_000_000n,
+            }).signAndSubmit(alice.signer);
             expect(routes["single-event"][0].trigger).toHaveBeenCalledOnce();
+            expect(
+                routes["single-event"][0].trigger.mock.calls[0][0].amount
+            ).toEqual(10_000_000_000n);
         });
     });
 });

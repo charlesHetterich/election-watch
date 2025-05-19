@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { TypedApi } from "polkadot-api";
 
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
@@ -104,9 +103,7 @@ export async function loadApps(appsDir: string, manager: AppsManager) {
         // Find all apps in `appsDir`
         const appNames = fs
             .readdirSync(appsDir, { withFileTypes: true })
-            .filter(
-                (dirent) => dirent.isDirectory() && !dirent.name.startsWith("_")
-            )
+            .filter((dir) => dir.isDirectory() && !dir.name.startsWith("_"))
             .map((dirent) => dirent.name);
 
         // Load all apps

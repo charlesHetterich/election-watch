@@ -5,7 +5,7 @@
   "scripts": {
     "start": "npx tsx src/index.ts",
     "testup": "nohup npx @acala-network/chopsticks -c ./tests/polkadot.yml >/dev/null 2>&1 &",
-    "test": "vitest",
+    "test": "vitest --silent",
     "testdown": "pgrep -f \"@acala-network/chopsticks\" | xargs kill",
     "build": "tsc",
     "postinstall": "papi generate"
@@ -27,7 +27,7 @@
     "@types/nodemailer": "^6.4.17",
     "dotenv": "^16.5.0",
     "nodemailer": "^6.10.1",
-    "polkadot-api": "^1.9.9"
+    "polkadot-api": "^1.11.1"
   },
   "type": "module"
 }

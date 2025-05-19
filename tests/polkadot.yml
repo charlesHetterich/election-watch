@@ -1,13 +1,9 @@
 endpoint:
-  - wss://polkadot-rpc.dwellir.com
   - wss://rpc.ibp.network/polkadot
+  - wss://polkadot-rpc.dwellir.com
 mock-signature-host: true
-# block: 100
-db: ./bin/polkadot/db.sqlite
 runtime-log-level: 5
-# wasm-override: polkadot_runtime.compact.compressed.wasm
 build-block-mode: "Instant"
-
 import-storage:
   System:
     Account:
