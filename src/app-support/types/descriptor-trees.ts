@@ -7,7 +7,7 @@ import {
     VirtualChainId,
 } from "./known-chains";
 
-async function buildPaths<T, P extends string>(
+async function buildPaths<T extends object, P extends string>(
     prefix: P,
     tree: T
 ): Promise<PathMap<T, P> | Promise<string>> {

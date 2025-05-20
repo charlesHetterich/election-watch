@@ -15,7 +15,7 @@ async function handlerFromRoute<WP extends WatchPath>(
     // NOTE! we will likely move position of chain ID in
     //       which case this also needs to be updated
     const watching_tuple = route.watching.split(".");
-    const chainID = watching_tuple[0];
+    const chainID = watching_tuple[0] as ChainId;
     const pth_arr = watching_tuple.slice(1);
 
     // Start at the top this chain's API, and then
@@ -29,7 +29,7 @@ async function handlerFromRoute<WP extends WatchPath>(
     switch (pth_arr[0]) {
         case WatchType.EVENT:
             return (context) => {
-                watchable.watch().forEach(async (data) => {
+                watchable.watch().forEach(async (data: any) => {
                     if (await route.trigger(data.payload, context)) {
                         route.lambda(data.payload, context);
                     }
@@ -37,7 +37,7 @@ async function handlerFromRoute<WP extends WatchPath>(
             };
         case WatchType.QUERY:
             return (context) => {
-                watchable.watchValue().forEach(async (payload) => {
+                watchable.watchValue().forEach(async (payload: any) => {
                     if (await route.trigger(payload, context)) {
                         route.lambda(payload, context);
                     }
@@ -61,7 +61,7 @@ async function loadApp(
     appName: string,
     manager: AppsManager
 ): Promise<LambdaApp> {
-    let app = new LambdaApp(appName, "", true, [], [], null, []);
+    let app = new LambdaApp(appName, "", true, [], [], [], []);
     try {
         // Load & expect `TAppModule`
         const appModule = (
@@ -81,7 +81,7 @@ async function loadApp(
                 async (route) => await handlerFromRoute(route, manager)
             )
         );
-    } catch (e) {
+    } catch (e: any) {
         // Mark the app as dead if any errors occur
         app.alive = false;
         app.logs.push(`Error loading ${appName}: ${e.stack}`);

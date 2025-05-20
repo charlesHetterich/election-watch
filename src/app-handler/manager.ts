@@ -39,7 +39,7 @@ export class AppsManager {
      * Get the `TypedAPI` for a given `chainId`. Add this chain,
      * RPC client, & API to the manager if it doesn't exist yet.
      */
-    public async getAPI(chainId: string): Promise<TypedApi<any>> {
+    public async getAPI(chainId: ChainId): Promise<TypedApi<any>> {
         // Return already created API if it exists.
         // Otherwise create the chain & give its API.
         if (this.apis[chainId]) {

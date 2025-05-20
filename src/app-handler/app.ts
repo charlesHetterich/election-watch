@@ -30,7 +30,7 @@ export class LambdaApp {
         public alive: boolean,
         public watchPaths: WatchPath[],
         public chains: ChainId[],
-        public handlers: RouteHandler[] | null,
+        public handlers: RouteHandler[],
         public logs: string[] = []
     ) {}
 }
