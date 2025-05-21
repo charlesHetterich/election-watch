@@ -92,14 +92,14 @@ describe("Substrate Lambdas Client", async () => {
             const apps = manager["apps"].reduce((acc, app) => {
                 acc[app.name] = app;
                 return acc;
-            }, {}) as Record<string, LambdaApp>;
+            }, {} as Record<string, LambdaApp>);
 
             // Check simple invalid apps
             expect(apps["no-index"].name).toEqual("no-index");
             expect(apps["no-index"].alive).toBe(false);
-            expect(apps["no-index"].handlers).toBeNull();
+            expect(apps["no-index"].handlers).toHaveLength(0);
             expect(apps["invalid-module"].alive).toBe(false);
-            expect(apps["invalid-module"].handlers).toBeNull();
+            expect(apps["invalid-module"].handlers).toHaveLength(0);
 
             // Check simple valid apps
             expect(apps["single-event"].name).toEqual("single-event");
@@ -121,7 +121,7 @@ describe("Substrate Lambdas Client", async () => {
         const apps = manager["apps"].reduce((acc, app) => {
             acc[app.name] = app;
             return acc;
-        }, {}) as Record<string, LambdaApp>;
+        }, {} as Record<string, LambdaApp>);
 
         beforeAll(async () => {
             // Submit a remark block so we start listening to events during a *mostly* empty block

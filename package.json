@@ -5,7 +5,7 @@
   "scripts": {
     "start": "npx tsx src/index.ts",
     "testup": "npx @acala-network/chopsticks -c ./tests/polkadot.yml",
-    "test": "vitest --silent",
+    "test": "vitest",
     "testdown": "pgrep -f \"@acala-network/chopsticks\" | xargs kill",
     "build": "tsc",
     "postinstall": "papi generate"
@@ -18,7 +18,7 @@
     "@types/node": "^22.14.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.3"
+    "vitest": "^3.1.4"
   },
   "dependencies": {
     "@polkadot-api/descriptors": "file:.papi/descriptors",

@@ -28,7 +28,7 @@ import { getRelayId, isRelay } from "./known-chains";
 export class AppsManager {
     private lightClient: Client;
     private relayChains: Record<string, Chain> = {};
-    private apis = {} as Record<ChainId, TypedApi<any>>;
+    public apis = {} as Record<ChainId, TypedApi<(typeof D)[ChainId]>>;
     public apps: LambdaApp[] = [];
 
     constructor() {

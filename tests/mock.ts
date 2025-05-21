@@ -4,13 +4,17 @@ import { withPolkadotSdkCompat } from "polkadot-api/polkadot-sdk-compat";
 import path from "path";
 import { ChainId } from "@lambdas/app-support";
 import * as D from "@polkadot-api/descriptors";
+import { AppsManager } from "@lambdas/app-handler";
 
 export const appsDir = path.join(process.cwd(), "tests/mock-apps");
 
 /**
  * mock of `AppsManager.getAPI`
  */
-export async function mockGetAPI(chainId: ChainId): Promise<TypedApi<any>> {
+export async function mockGetAPI(
+    this: AppsManager,
+    chainId: ChainId
+): Promise<TypedApi<any>> {
     if (this.apis[chainId]) {
         return this.apis[chainId];
     }

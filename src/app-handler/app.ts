@@ -9,12 +9,15 @@ export enum WatchType {
 }
 
 /**
- * A function that handles a Substrate Lambdas `TRoute` specification
+ * A function that launches & handles a `TRoute` specification
  */
 export type RouteHandler = (context: Context<any>) => void;
 
 /**
- * Wrapper around `LambdaApp` which stores additional metadata
+ * The object that is derived from loading an `AppModule` specification
+ *
+ * Contains all relevant information & live metrics for a single app running
+ * in our Substrate Lambdas instance.
  *
  * @property name        - The name of the app
  * @property description - A description of the app
