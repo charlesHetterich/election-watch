@@ -37,7 +37,7 @@ export default App(description, {
     },
 }, { /** More routes across many chains . . . */ });
 ```
-`Observables` is a powerful entry point which stitches together [`TypedAPI`](https://papi.how/typed#typedapi)'s across many chains, with additional features. It
+`Observables` is a powerful entry point which stitches together [`TypedAPI`](https://papi.how/typed#typedapi)'s across all chains with [available descriptors](https://papi.how/codegen), with additional features. It
 - acts as a point of *discovery* for what is available across the polkadot ecosystem.
 - capturs real-valued meta data about an application (such as *chain dependencies* of this application)
 - seemlessly makes relevant type information available to developers
