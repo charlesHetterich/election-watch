@@ -3,6 +3,7 @@
 bin/
 .papi
 dummy/
+tsconfig.vitest-temp.json
 
 node_modules/
 *lock.json

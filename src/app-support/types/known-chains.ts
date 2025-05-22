@@ -1,6 +1,16 @@
 import * as D from "@polkadot-api/descriptors";
 import { ChainDefinition, TypedApi } from "polkadot-api";
 
+// TODO! How to make this hard-coded list
+//       less fragile against PAPI updates?
+const RELAYS = [
+    "polkadot",
+    "ksmcc3",
+    "westend2",
+    "paseo",
+    "rococo_v2_2",
+] as const;
+
 /**
  * Set of Id's for all chains with available descriptors
  */
@@ -16,8 +26,7 @@ export type ChainId =
  *
  * A subset of `ChainId`.
  */
-export type RelayId = ChainId &
-    ("polkadot" | "ksmcc3" | "westend2" | "paseo" | "rococo_v2_2");
+export type RelayId = ChainId & (typeof RELAYS)[number];
 
 /**
  * All chains with available descriptors. (Real value equivalent of `ChainId` set)
@@ -33,9 +42,7 @@ export const knownChains: ChainId[] = (
  * All relay chains with available descriptors. (Real value equivalent of `RelayId` set)
  */
 export const knownRelays: RelayId[] = knownChains.filter((id): id is RelayId =>
-    // TODO! How to make this hard-coded list
-    //       less fragile against PAPI updates?
-    ["polkadot", "ksmcc3", "westend2", "paseo", "rococo_v2_2"].includes(id)
+    (RELAYS as readonly string[]).includes(id)
 );
 
 /**
@@ -89,26 +96,26 @@ if (import.meta.vitest) {
 
     const { test, expect, expectTypeOf } = import.meta.vitest;
 
-    test("`knownChains` should contain the variable names of all available chain descriptors", () => {
+    test("`knownChains` & `ChainId` should contain the variable names of all available chain descriptors", () => {
         expect(knownChains).toContain("polkadot");
         expect(knownChains).toContain("polkadot_asset_hub");
         expect(knownChains).toContain("rococo_v2_2");
+        expectTypeOf<
+            "polkadot" | "polkadot_asset_hub" | "rococo_v2_2"
+        >().toExtend<ChainId>();
     });
 
-    test("`knownRelays` should contain descriptors of available relay chains, but not parachains", () => {
+    test("`knownRelays` & `RelayId` should contain variable names of available relay chains, but not parachains", () => {
         expect(knownRelays).toContain("polkadot");
         expect(knownRelays).toContain("rococo_v2_2");
         expect(knownRelays).not.toContain("polkadot_asset_hub");
+        expectTypeOf<"polkadot" | "rococo_v2_2">().toExtend<RelayId>();
+        expectTypeOf<"polkadot_asset_hub">().not.toExtend<RelayId>();
     });
 
     test("`knownChains` should exclude non descriptors from `@polkadot-api/descriptors`", () => {
         expect(knownChains).not.contain("DispatchClass");
         expect(knownChains).not.contain("BagsListListListError");
-    });
-
-    test("`ChainId` & `RelayId` should reflect `knownChains` & `knownRelays` respectively", () => {
-        expectTypeOf<ChainId>().toEqualTypeOf<(typeof knownChains)[number]>();
-        expectTypeOf<RelayId>().toEqualTypeOf<(typeof knownRelays)[number]>();
     });
 
     test("`ToVirtual` & `toVirtual` convert snake cased chain ids to camel case", () => {

@@ -105,7 +105,6 @@ export class AppsManager {
     }
 
     async launch() {
-        // const context = new Context(this.apis["polkadot"]); // TODO! update once we update `appModule` definition to include chain dependencies
         console.log(
             "\n" + chalk.yellowBright.bold("Building & launching apps")
         );
