@@ -80,3 +80,62 @@ export type ToApi<C extends ChainId> = {
         ? TypedApi<(typeof D)[K]>
         : never;
 }[C];
+
+if (import.meta.vitest) {
+    /**
+     * For the tests in this file we assume the descriptors
+     * "polkadot", "polkadot_asset_hub" and "rococo_v2_2" are available.
+     */
+
+    const { test, expect, expectTypeOf } = import.meta.vitest;
+
+    test("`knownChains` should contain the variable names of all available chain descriptors", () => {
+        expect(knownChains).toContain("polkadot");
+        expect(knownChains).toContain("polkadot_asset_hub");
+        expect(knownChains).toContain("rococo_v2_2");
+    });
+
+    test("`knownRelays` should contain descriptors of available relay chains, but not parachains", () => {
+        expect(knownRelays).toContain("polkadot");
+        expect(knownRelays).toContain("rococo_v2_2");
+        expect(knownRelays).not.toContain("polkadot_asset_hub");
+    });
+
+    test("`knownChains` should exclude non descriptors from `@polkadot-api/descriptors`", () => {
+        expect(knownChains).not.contain("DispatchClass");
+        expect(knownChains).not.contain("BagsListListListError");
+    });
+
+    test("`ChainId` & `RelayId` should reflect `knownChains` & `knownRelays` respectively", () => {
+        expectTypeOf<ChainId>().toEqualTypeOf<(typeof knownChains)[number]>();
+        expectTypeOf<RelayId>().toEqualTypeOf<(typeof knownRelays)[number]>();
+    });
+
+    test("`ToVirtual` & `toVirtual` convert snake cased chain ids to camel case", () => {
+        expectTypeOf<ToVirtual<"polkadot">>().toEqualTypeOf<"polkadot">();
+        expectTypeOf<
+            ToVirtual<"polkadot_asset_hub">
+        >().toEqualTypeOf<"polkadotAssetHub">();
+        expectTypeOf<ToVirtual<"rococo_v2_2">>().toEqualTypeOf<"rococoV2.2">();
+
+        expect(toVirtual("polkadot")).toEqual("polkadot");
+        expect(toVirtual("polkadot_asset_hub")).toEqual("polkadotAssetHub");
+        expect(toVirtual("rococo_v2_2")).toEqual("rococoV2.2");
+    });
+
+    test("`FromVirtual` convert camel case virtual ids back to their original chain ids", () => {
+        expectTypeOf<FromVirtual<"polkadot">>().toEqualTypeOf<"polkadot">();
+        expectTypeOf<
+            FromVirtual<"polkadotAssetHub">
+        >().toEqualTypeOf<"polkadot_asset_hub">();
+        expectTypeOf<
+            FromVirtual<"rococoV2.2">
+        >().toEqualTypeOf<"rococo_v2_2">();
+    });
+
+    test("`ToAPI` converts a `ChainId` to its corresponding `TypedApi`", () => {
+        expectTypeOf<ToApi<"polkadot">>().toEqualTypeOf<
+            TypedApi<typeof D.polkadot>
+        >();
+    });
+}

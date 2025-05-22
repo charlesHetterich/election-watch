@@ -10,7 +10,9 @@
       "baseUrl": "src",
       "paths": {
         "@lambdas/*": ["*"]
-      }
+      },
+
+      "types": ["vitest/importMeta"]   // lets TS recognise import.meta.vitest
     },
 
     "include": ["src/**/*", "tests/**/*"],

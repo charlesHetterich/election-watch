@@ -7,8 +7,14 @@ export default defineConfig({
         },
     },
     test: {
+        silent: true,
         globals: true,
+        includeSource: ["src/**/*.{js,ts}"],
         reporters: "verbose",
         environment: "node",
+        typecheck: {
+            enabled: true,
+            include: ["src/**/*.{js,ts}"],
+        },
     },
 });

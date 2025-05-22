@@ -6,6 +6,7 @@
     "start": "npx tsx src/index.ts",
     "testup": "npx @acala-network/chopsticks -c ./tests/polkadot.yml",
     "test": "vitest",
+    "unit:test": "vitest src",
     "testdown": "pgrep -f \"@acala-network/chopsticks\" | xargs kill",
     "build": "tsc",
     "postinstall": "papi generate"
