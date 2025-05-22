@@ -18,7 +18,7 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 ### Syntactic Sugar
 Substrate Lambdas leveragees Typescript's rich type system to build an elegant app development experience resting on top of ***[papi](https://papi.how/)***. When designing the interface, our goal is to allow app developers to easily specify their applications intentions with:
 1. **minimal required** prior knowledge of irrelevant blockchain concepts
-2. **minimal required** code for an app's specification *(without introducing rigidity or obfuscating what goes on under-the-hood)*
+2. **minimal required** code for an app's specification *(without introducing rigidity or obfuscating what's going on under-the-hood)*
 
 ```ts
 import { App, Observables } from "@lambdas/app-support";
@@ -28,7 +28,7 @@ Description of how this app works & what it does
 `;
 
 export default App(description, {
-    watching: Observables.SomeChainId.event.Something.ImWatching,
+    watching: Observables.SomeChainId.event.SomePalletId.SomeEvent,
     trigger: (payload, context) => {
         // do some filtering . . .
     },
@@ -41,6 +41,7 @@ export default App(description, {
 - acts as a point of *discovery* for what is available across the polkadot ecosystem.
 - capturs real-valued meta data about an application (such as *chain dependencies* of this application)
 - seemlessly makes relevant type information available to developers
+- **[todo!]** allows specifying *Blanket* routes on events, which observe many events at once. For example, we may specify `Observables.Polkadot.event.Balances`to watch all events within Polkadot's *Balances* pallet, or `Observables.Polkadot.event` to watch all Polkadot events, with a single route.
 
 You can refer to the list of supported [known chains](https://github.com/polkadot-api/polkadot-api/tree/main/packages/known-chains).
 
