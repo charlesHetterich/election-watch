@@ -71,3 +71,81 @@ export function App<WPs extends WatchPath[]>(
         routes: routes,
     };
 }
+
+import type { SS58String, TypedApi } from "polkadot-api";
+if (import.meta.vitest) {
+    const { test, expectTypeOf } = import.meta.vitest;
+    const { Observables } = await import("./descriptor-trees");
+
+    test("`WatchPath` structured type strings", () => {
+        expectTypeOf<"polkadot_asset_hub.event.balances.Transfer">().toExtend<WatchPath>();
+        expectTypeOf<"not_a_chain.event.balances.Transfer">().not.toExtend<WatchPath>();
+    });
+
+    test("`PartsOf` should properly split ChainIds from `WatchPath`", () => {
+        expectTypeOf<
+            PartsOf<"polkadot.thisPart.can_be.Anything...">
+        >().toEqualTypeOf<["polkadot", "thisPart.can_be.Anything..."]>();
+    });
+
+    test("`Payload` should capture correct `Observable` payload for a given `WatchPath`", () => {
+        expectTypeOf<
+            Payload<"polkadot.event.doesnt.exist">
+        >().toEqualTypeOf<never>();
+        expectTypeOf<
+            Payload<typeof Observables.event.polkadot.Balances.Transfer>
+        >().toEqualTypeOf<{
+            from: SS58String;
+            to: SS58String;
+            amount: bigint;
+        }>();
+        expectTypeOf<
+            Payload<typeof Observables.query.polkadotAssetHub.System.Number>
+        >().toEqualTypeOf<number>();
+    });
+
+    test("`App` function propagates correct payload type", () => {
+        App("test", {
+            watching: Observables.event.polkadot.Bounties.BountyProposed,
+            trigger: (payload, _) => {
+                expectTypeOf<typeof payload>().toEqualTypeOf<{
+                    index: number;
+                }>();
+                return true;
+            },
+            lambda: (payload, _) => {
+                expectTypeOf<typeof payload>().toEqualTypeOf<{
+                    index: number;
+                }>();
+            },
+        });
+    });
+
+    test("`App` function correctly propagates many depended on chains through context", () => {
+        App(
+            "test",
+            {
+                watching: Observables.event.polkadot.Bounties.BountyProposed,
+                trigger: (_, c) => {
+                    expectTypeOf<typeof c.apis>().toEqualTypeOf<{
+                        polkadot: TypedApi<(typeof D)["polkadot"]>;
+                        "rococoV2.2": TypedApi<(typeof D)["rococo_v2_2"]>;
+                    }>();
+                    return true;
+                },
+                lambda: (_, __) => {},
+            },
+            {
+                watching:
+                    Observables.event["rococoV2.2"].Bounties.BountyProposed,
+                trigger: (_, __) => true,
+                lambda: (_, c) => {
+                    expectTypeOf<typeof c.apis>().toEqualTypeOf<{
+                        polkadot: TypedApi<(typeof D)["polkadot"]>;
+                        "rococoV2.2": TypedApi<(typeof D)["rococo_v2_2"]>;
+                    }>();
+                },
+            }
+        );
+    });
+}
