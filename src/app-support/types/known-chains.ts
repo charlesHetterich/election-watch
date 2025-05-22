@@ -54,7 +54,7 @@ export const knownRelays: RelayId[] = knownChains.filter((id): id is RelayId =>
 export type ToVirtual<S extends string> =
     S extends `${infer Head}_${infer Tail}`
         ? Tail extends `${number}${string}`
-            ? `${Head}.${ToVirtual<Tail>}`
+            ? `${Head}_${ToVirtual<Tail>}`
             : `${Head}${Capitalize<ToVirtual<Tail>>}`
         : S;
 
@@ -67,9 +67,9 @@ export type VirtualChainId = ToVirtual<ChainId>;
  * Convert a `ChainId` to a `VirtualChainId`
  */
 export function toVirtual(chainId: ChainId): VirtualChainId {
-    return chainId
-        .replace(/_([a-z])/g, (_, ch) => ch.toUpperCase())
-        .replace(/_/, (_, ch) => ".") as VirtualChainId;
+    return chainId.replace(/_([a-z])/g, (_, ch) =>
+        ch.toUpperCase()
+    ) as VirtualChainId;
 }
 
 /**
@@ -123,11 +123,11 @@ if (import.meta.vitest) {
         expectTypeOf<
             ToVirtual<"polkadot_asset_hub">
         >().toEqualTypeOf<"polkadotAssetHub">();
-        expectTypeOf<ToVirtual<"rococo_v2_2">>().toEqualTypeOf<"rococoV2.2">();
+        expectTypeOf<ToVirtual<"rococo_v2_2">>().toEqualTypeOf<"rococoV2_2">();
 
         expect(toVirtual("polkadot")).toEqual("polkadot");
         expect(toVirtual("polkadot_asset_hub")).toEqual("polkadotAssetHub");
-        expect(toVirtual("rococo_v2_2")).toEqual("rococoV2.2");
+        expect(toVirtual("rococo_v2_2")).toEqual("rococoV2_2");
     });
 
     test("`FromVirtual` convert camel case virtual ids back to their original chain ids", () => {
@@ -136,7 +136,7 @@ if (import.meta.vitest) {
             FromVirtual<"polkadotAssetHub">
         >().toEqualTypeOf<"polkadot_asset_hub">();
         expectTypeOf<
-            FromVirtual<"rococoV2.2">
+            FromVirtual<"rococoV2_2">
         >().toEqualTypeOf<"rococo_v2_2">();
     });
 

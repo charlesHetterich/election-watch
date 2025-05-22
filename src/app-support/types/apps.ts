@@ -129,20 +129,19 @@ if (import.meta.vitest) {
                 trigger: (_, c) => {
                     expectTypeOf<typeof c.apis>().toEqualTypeOf<{
                         polkadot: TypedApi<(typeof D)["polkadot"]>;
-                        "rococoV2.2": TypedApi<(typeof D)["rococo_v2_2"]>;
+                        rococoV2_2: TypedApi<(typeof D)["rococo_v2_2"]>;
                     }>();
                     return true;
                 },
                 lambda: (_, __) => {},
             },
             {
-                watching:
-                    Observables.event["rococoV2.2"].Bounties.BountyProposed,
+                watching: Observables.event.rococoV2_2.Bounties.BountyProposed,
                 trigger: (_, __) => true,
                 lambda: (_, c) => {
                     expectTypeOf<typeof c.apis>().toEqualTypeOf<{
                         polkadot: TypedApi<(typeof D)["polkadot"]>;
-                        "rococoV2.2": TypedApi<(typeof D)["rococo_v2_2"]>;
+                        rococoV2_2: TypedApi<(typeof D)["rococo_v2_2"]>;
                     }>();
                 },
             }
