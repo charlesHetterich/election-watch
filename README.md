@@ -15,6 +15,35 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 **(4)** Be as readable as possible for a layperson (specifically *app* code, but also *core* code where possible). *Code is truth— no process is trustless unless you personally can read the code.*
 
 # Features
+### Syntactic Sugar
+Substrate Lambdas leveragees Typescript's rich type system to build an elegant app development experience resting on top of ***[papi](https://papi.how/)***. When designing the interface, our goal is to allow app developers to easily specify their applications intentions with:
+1. **minimal required** prior knowledge of irrelevant blockchain concepts
+2. **minimal required** code for an app's specification *(without introducing rigidity or obfuscating what goes on under-the-hood)*
+
+```ts
+import { App, Observables } from "@lambdas/app-support";
+
+const description = `
+Description of how this app works & what it does
+`;
+
+export default App(description, {
+    watching: Observables.SomeChainId.event.Something.ImWatching,
+    trigger: (payload, context) => {
+        // do some filtering . . .
+    },
+    lambda: (payload, context) => {
+        // do something upon triggering . . .
+    },
+}, { /** More routes across many chains . . . */ });
+```
+`Observables` is a powerful entry point which stitches together [`TypedAPI`](https://papi.how/typed#typedapi)'s across many chains, with additional features. It
+- acts as a point of *discovery* for what is available across the polkadot ecosystem.
+- capturs real-valued meta data about an application (such as *chain dependencies* of this application)
+- seemlessly makes relevant type information available to developers
+
+You can refer to the list of supported [known chains](https://github.com/polkadot-api/polkadot-api/tree/main/packages/known-chains).
+
 ### Workers
 A core feature of Substrate Lambdas is the ability for apps to launch remote jobs in response to on-chain events. We provide a simple unified interface for app developers to launch jobs across a variety of cloud providers & server types.
 
@@ -83,26 +112,10 @@ fly scale count 1 -y # scale downn to single node
 fly apps destroy substrate-lambdas -y
 ```
 
-# Apps
-Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the default export defined with a `description` & any number of `routes`, using the given `App` builder. ***Example:***
-```ts
-import { App, Observables } from "@lambdas/app-support";
+## Create an app
+Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the default export defined with a `description` & any number of `routes`, using the given `App` builder. ([**Example**](src/apps/polkadot-election-dataset-aggregator/index.ts))
 
-const description = `
-Description of how this app works & what it does
-`;
-
-export default App(description, {
-    watching: Observables.event.Something.ImWatching,
-    trigger: (payload, context) => {
-        // do some filtering . . .
-    },
-    lambda: (payload, context) => {
-        // do something upon triggering . . .
-    },
-});
-```
-You can refer to the list of supported [known chains](https://github.com/polkadot-api/polkadot-api/tree/main/packages/known-chains).
+*In future iterations, the core of Substrate Lambdas will be available as a package & apps will be defined in their own independent projects— decoupled from the core code.*
 
 ## Hardware Campaign & Long-Term Vision
 > *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). Hardware-wise, think of something like an Amazon Alexa. I feel like this product should be pretty feasible.
