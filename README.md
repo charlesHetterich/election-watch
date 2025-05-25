@@ -17,7 +17,7 @@ Doing ***\<thing\>*** when ***\<trigger\>*** occurs is quite useful. Listening f
 # Features
 ### Syntactic Sugar
 Substrate Lambdas leveragees Typescript's rich type system to build an elegant app development experience resting on top of ***[papi](https://papi.how/)***. When designing the interface, our goal is to allow app developers to easily specify their applications intentions with:
-1. **minimal required** prior knowledge of irrelevant blockchain concepts
+1. **minimal required** prior knowledge of blockchain concepts
 2. **minimal required** code for an app's specification *(without introducing rigidity or obfuscating what's going on under-the-hood)*
 
 ```ts
