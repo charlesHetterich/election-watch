@@ -1,53 +1,69 @@
 import fs from "fs";
 import path from "path";
 
+import {
+    Context,
+    WatchLeaf,
+    TAppModule,
+    TRoute,
+    ChainId,
+} from "@lambdas/app-support";
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
-import { WatchPath, TAppModule, TRoute, ChainId } from "../app-support/types";
 
 /**
  * Creates a route handler from a route and an API
  */
-async function handlerFromRoute<WP extends WatchPath>(
-    route: TRoute<WP>,
+async function handlerFromRoute<WLs extends WatchLeaf[]>(
+    route: TRoute<WLs>,
     manager: AppsManager
 ): Promise<RouteHandler> {
-    // NOTE! we will likely move position of chain ID in
-    //       which case this also needs to be updated
-    const watching_tuple = route.watching.split(".");
-    const chainID = watching_tuple[0] as ChainId;
-    const pth_arr = watching_tuple.slice(1);
+    let leafHandlers: RouteHandler[] = [];
+    for (const leaf of route.watching) {
+        const path_arr = leaf.path.split(".");
 
-    // Start at the top this chain's API, and then
-    // traverse properties to the desired observable value
-    let watchable: any = await manager.getAPI(chainID);
-    for (const pth of pth_arr) {
-        watchable = watchable[pth];
+        // Start at the top this chain's API, and then
+        // traverse properties to the desired observable value
+        let watchable: any = await manager.getAPI(leaf.chain);
+        for (const pth of path_arr) {
+            watchable = watchable[pth];
+        }
+
+        // Configure route handler
+        switch (path_arr[0]) {
+            case WatchType.EVENT:
+                leafHandlers.push((context: Context<ChainId>) => {
+                    watchable.watch().forEach(async (data: any) => {
+                        if (await route.trigger(data.payload, context)) {
+                            route.lambda(data.payload, context);
+                        }
+                    });
+                });
+            case WatchType.QUERY:
+                leafHandlers.push((context: Context<ChainId>) => {
+                    // TODO! we have to handle keys & choose between `watchValue` & `watchEntries`.
+                    // On `WatchEntries` need to map `deleted` & `upsert` entries
+                    watchable.watchValue().forEach(async (payload: any) => {
+                        if (await route.trigger(payload, context)) {
+                            route.lambda(payload, context);
+                        }
+                    });
+                });
+            default:
+                // TODO! Instead of throwing, we should add
+                throw new Error(
+                    `Invalid call Observable route on chain ${leaf.chain} with path ${leaf.path}. Must start with "event" or "query".`
+                );
+        }
     }
 
-    // Configure route handler
-    switch (pth_arr[0]) {
-        case WatchType.EVENT:
-            return (context) => {
-                watchable.watch().forEach(async (data: any) => {
-                    if (await route.trigger(data.payload, context)) {
-                        route.lambda(data.payload, context);
-                    }
-                });
-            };
-        case WatchType.QUERY:
-            return (context) => {
-                watchable.watchValue().forEach(async (payload: any) => {
-                    if (await route.trigger(payload, context)) {
-                        route.lambda(payload, context);
-                    }
-                });
-            };
-        default:
-            throw new Error(
-                `Invalid call path ${route.watching}. Must start with "event" or "query".`
-            );
-    }
+    // Collect all leaf handlers into a single
+    // batch handler that calls all leaf handlers
+    return async (context: Context<ChainId>) => {
+        leafHandlers.forEach((handler) => {
+            handler(context);
+        });
+    };
 }
 
 /**
@@ -61,21 +77,18 @@ async function loadApp(
     appName: string,
     manager: AppsManager
 ): Promise<LambdaApp> {
-    let app = new LambdaApp(appName, "", true, [], [], [], []);
+    let app = new LambdaApp(appName, "", true, [], [], []);
     try {
         // Load & expect `TAppModule`
         const appModule = (
             await import(path.join(appsDir, appName, "index.ts"))
-        ).default as TAppModule<WatchPath[]>;
+        ).default as TAppModule<WatchLeaf[][]>;
 
         // Configure application from module
         app.description = appModule.description.trim();
-        app.watchPaths = [
-            ...new Set(appModule.routes.map((route) => route.watching)),
-        ];
-        app.chains = appModule.routes.map(
-            (route) => route.watching.split(".")[0] as ChainId
-        );
+        app.chains = appModule.routes
+            .map((route) => route.watching.map((leaf) => leaf.chain))
+            .flat();
         app.handlers = await Promise.all(
             appModule.routes.map(
                 async (route) => await handlerFromRoute(route, manager)

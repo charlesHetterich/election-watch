@@ -11,7 +11,7 @@ export enum WatchType {
 /**
  * A function that launches & handles a `TRoute` specification
  */
-export type RouteHandler = (context: Context<any>) => void;
+export type RouteHandler = (context: Context<ChainId>) => void;
 
 /**
  * The object that is derived from loading an `AppModule` specification
@@ -31,7 +31,6 @@ export class LambdaApp {
         public name: string,
         public description: string,
         public alive: boolean,
-        public watchPaths: WatchLeaf[],
         public chains: ChainId[],
         public handlers: RouteHandler[],
         public logs: string[] = []

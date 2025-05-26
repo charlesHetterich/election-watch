@@ -1,4 +1,6 @@
+import { PlainDescriptor, StorageDescriptor } from "polkadot-api";
 import * as D from "@polkadot-api/descriptors";
+
 import { Expand, PartialArgs } from "./helpers";
 import {
     knownChains,
@@ -7,7 +9,6 @@ import {
     VirtualChainId,
     ChainId,
 } from "./known-chains";
-import { PlainDescriptor, StorageDescriptor } from "polkadot-api";
 
 /**
  *

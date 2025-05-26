@@ -27,7 +27,7 @@ export type Payload<WP extends WatchLeaf> = PayloadLookup<
  */
 export interface TRoute<
     WP extends WatchLeaf[],
-    WPs extends readonly WatchLeaf[][] = []
+    WPs extends readonly WatchLeaf[][] = [WP]
 > {
     watching: WP;
     trigger: (
