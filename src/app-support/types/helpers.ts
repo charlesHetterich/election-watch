@@ -1,13 +1,12 @@
-import { PlainDescriptor } from "polkadot-api";
+import { PlainDescriptor, StorageDescriptor } from "polkadot-api";
+import { ChainId } from "./known-chains";
 
 /**
- * Builds tree of descriptor types
+ * Utility type to expand a type into its properties.
+ *
+ * Used for fine-tuned control over what exactly displays when hovering over variables in IDE.
  */
-export type DescriptorTree<T> = {
-    [K in keyof T]: T[K] extends PlainDescriptor<infer U>
-        ? U
-        : DescriptorTree<T[K]>;
-};
+export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
 /**
  * Converts a type string into a tuple of type strings
@@ -20,28 +19,46 @@ export type Split<
     : [S];
 
 /**
- * Extract specific type inside of a descriptor tree, given by a list of type strings
+ *  Union of `[] | [key1] | [key1, key2] | ...` across some set of keys
  */
-export type DeepLookup<
-    T,
-    Path extends readonly string[] | string
-> = Path extends string
-    ? DeepLookup<T, Split<Path>>
-    : Path extends [infer K, ...infer Rest]
-    ? K extends keyof T
-        ? Rest extends string[]
-            ? DeepLookup<T[K], Rest>
-            : T[K]
-        : never
+export type PartialArgs<T extends readonly any[]> = T extends [
+    ...infer Rest,
+    any
+]
+    ? PartialArgs<Rest> | T
     : T;
 
 /**
- * Map of all paths in a descriptor tree
+ * The structure of a payload under `Observables.event`
  */
-export type PathMap<T, P extends string = ""> = {
-    [K in keyof T]: T[K] extends PlainDescriptor<any>
-        ? P extends "" // leaf
-            ? K & string
-            : `${P}.${K & string}`
-        : PathMap<T[K], P extends "" ? K & string : `${P}.${K & string}`>; // subtree
-};
+type EventPayload<Value> = Value;
+
+/**
+ * The structure of a payload under `Observables.storage`
+ */
+type StoragePayload<Key, Value> = Expand<{
+    key: Key;
+    value: Value;
+}>;
+
+/**
+ * Extract specific type inside of a descriptor tree, given by a list of type strings
+ */
+export type PayloadLookup<TreeNode, Path extends readonly string[]> =
+    // Pop top key from path
+    Path extends [infer K, ...infer Rest extends string[]]
+        ? // More path— dig deeper
+          K extends keyof TreeNode
+            ? PayloadLookup<TreeNode[K], Rest>
+            : never
+        : // Storage leaf
+        TreeNode extends StorageDescriptor<infer Key, infer Value, any, any>
+        ? StoragePayload<Key, Value>
+        : // Event leaf
+        TreeNode extends PlainDescriptor<infer Value>
+        ? EventPayload<Value>
+        : never;
+
+/**
+ * Tests covered by sibling files
+ */

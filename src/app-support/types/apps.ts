@@ -1,33 +1,19 @@
 import * as D from "@polkadot-api/descriptors";
 
-import { DeepLookup, DescriptorTree } from "./helpers";
-import { ChainId } from "./known-chains";
+import { PayloadLookup, Split } from "./helpers";
+import { WatchLeaf } from "./descriptor-trees";
 import { Context } from "../context";
-
-/**
- * Expected format of a `<TRoute>.watching` string:
- */
-export type WatchPath = `${ChainId}.${string}`;
-
-/**
- * Extract the `ChainId` and rest-of-path: `string` from a `WatchPath`
- */
-export type PartsOf<WP extends WatchPath> =
-    WP extends `${infer C}.${infer Rest}` ? [C, Rest] : never;
 
 /**
  * The expected type of a payload for a given `WatchPath`
  */
-export type Payload<WP extends WatchPath> = DeepLookup<
+export type Payload<WP extends WatchLeaf> = PayloadLookup<
     {
-        event: DescriptorTree<
-            (typeof D)[PartsOf<WP>[0]]["descriptors"]["pallets"]["__event"]
-        >;
-        query: DescriptorTree<
-            (typeof D)[PartsOf<WP>[0]]["descriptors"]["pallets"]["__storage"]
-        >;
+        event: (typeof D)[WP["chain"]]["descriptors"]["pallets"]["__event"];
+
+        storage: (typeof D)[WP["chain"]]["descriptors"]["pallets"]["__storage"];
     },
-    PartsOf<WP>[1]
+    Split<WP["path"]>
 >;
 
 /**
@@ -39,22 +25,25 @@ export type Payload<WP extends WatchPath> = DeepLookup<
  * @property trigger  - Specifies the conditions under which we will take some `lambda` action
  * @property lambda   - The action to upon `trigger`'s conditions being satisfied
  */
-export interface TRoute<WP extends WatchPath, WPs extends WatchPath[] = []> {
+export interface TRoute<
+    WP extends WatchLeaf[],
+    WPs extends readonly WatchLeaf[][] = []
+> {
     watching: WP;
     trigger: (
-        payload: Payload<WP>,
-        context: Context<PartsOf<WPs[number]>[0]>
+        payload: Payload<WP[0]>, // TODO! should be union of all WatchLeafs
+        context: Context<WPs[number][number]["chain"]>
     ) => boolean | Promise<boolean>;
     lambda: (
-        payload: Payload<WP>,
-        context: Context<PartsOf<WPs[number]>[0]>
+        payload: Payload<WP[0]>, // TODO! should be union of all WatchLeafs
+        context: Context<WPs[number][number]["chain"]>
     ) => void | Promise<void>;
 }
 
 /**
  * Specifies a complete lambda application as a collection of routes and some peripheral settings.
  */
-export interface TAppModule<WPs extends WatchPath[]> {
+export interface TAppModule<WPs extends readonly WatchLeaf[][]> {
     description: string;
     routes: { [K in keyof WPs]: TRoute<WPs[K], WPs> };
 }
@@ -62,7 +51,7 @@ export interface TAppModule<WPs extends WatchPath[]> {
 /**
  * Convenience builder function for specifying a lambda `TAppModule` with built-in type hints.
  */
-export function App<WPs extends WatchPath[]>(
+export function App<const WPs extends readonly WatchLeaf[][]>(
     description: string,
     ...routes: { [K in keyof WPs]: TRoute<WPs[K], WPs> }
 ): TAppModule<WPs> {
@@ -77,36 +66,56 @@ if (import.meta.vitest) {
     const { test, expectTypeOf } = import.meta.vitest;
     const { Observables } = await import("./descriptor-trees");
 
-    test("`WatchPath` structured type strings", () => {
-        expectTypeOf<"polkadot_asset_hub.event.balances.Transfer">().toExtend<WatchPath>();
-        expectTypeOf<"not_a_chain.event.balances.Transfer">().not.toExtend<WatchPath>();
-    });
+    // test("`WatchPath` structured type strings", () => {
+    //     expectTypeOf<"polkadot_asset_hub.event.balances.Transfer">().toExtend<WatchPath>();
+    //     expectTypeOf<"not_a_chain.event.balances.Transfer">().not.toExtend<WatchPath>();
+    // });
 
-    test("`PartsOf` should properly split ChainIds from `WatchPath`", () => {
-        expectTypeOf<
-            PartsOf<"polkadot.thisPart.can_be.Anything...">
-        >().toEqualTypeOf<["polkadot", "thisPart.can_be.Anything..."]>();
-    });
+    // test("`PartsOf` should properly split ChainIds from `WatchPath`", () => {
+    //     expectTypeOf<
+    //         PartsOf<"polkadot.thisPart.can_be.Anything...">
+    //     >().toEqualTypeOf<["polkadot", "thisPart.can_be.Anything..."]>();
+    // });
 
     test("`Payload` should capture correct `Observable` payload for a given `WatchPath`", () => {
         expectTypeOf<
-            Payload<"polkadot.event.doesnt.exist">
+            Payload<{
+                chain: "polkadot";
+                path: "event.doesnt.exist";
+                args: [];
+                options: {};
+            }>
         >().toEqualTypeOf<never>();
-        expectTypeOf<
-            Payload<typeof Observables.event.polkadot.Balances.Transfer>
-        >().toEqualTypeOf<{
+
+        const ev_obs = Observables.event.polkadot.Balances.Transfer();
+        expectTypeOf<Payload<(typeof ev_obs)[number]>>().toEqualTypeOf<{
             from: SS58String;
             to: SS58String;
             amount: bigint;
         }>();
-        expectTypeOf<
-            Payload<typeof Observables.query.polkadotAssetHub.System.Number>
-        >().toEqualTypeOf<number>();
+
+        const st_obs =
+            Observables.storage.polkadotAssetHub.Balances.Account("id");
+        expectTypeOf<Payload<(typeof st_obs)[number]>>().toEqualTypeOf<{
+            key: [SS58String];
+            value: {
+                free: bigint;
+                reserved: bigint;
+                frozen: bigint;
+                flags: bigint;
+            };
+        }>();
+
+        const st2_obs = Observables.storage.polkadotAssetHub.System.Number();
+        expectTypeOf<Payload<(typeof st2_obs)[number]>>().toEqualTypeOf<{
+            key: [];
+            value: number;
+        }>();
     });
 
     test("`App` function propagates correct payload type", () => {
         App("test", {
-            watching: Observables.event.polkadot.Bounties.BountyProposed,
+            watching: Observables.event.polkadot.Bounties.BountyProposed(),
             trigger: (payload, _) => {
                 expectTypeOf<typeof payload>().toEqualTypeOf<{
                     index: number;
@@ -125,7 +134,7 @@ if (import.meta.vitest) {
         App(
             "test",
             {
-                watching: Observables.event.polkadot.Bounties.BountyProposed,
+                watching: Observables.event.polkadot.Bounties.BountyProposed(),
                 trigger: (_, c) => {
                     expectTypeOf<typeof c.apis>().toEqualTypeOf<{
                         polkadot: TypedApi<(typeof D)["polkadot"]>;
@@ -136,7 +145,8 @@ if (import.meta.vitest) {
                 lambda: (_, __) => {},
             },
             {
-                watching: Observables.event.rococoV2_2.Bounties.BountyProposed,
+                watching:
+                    Observables.event.rococoV2_2.Bounties.BountyProposed(),
                 trigger: (_, __) => true,
                 lambda: (_, c) => {
                     expectTypeOf<typeof c.apis>().toEqualTypeOf<{
@@ -146,5 +156,9 @@ if (import.meta.vitest) {
                 },
             }
         );
+    });
+
+    test("test123", async () => {
+        const polkadot = D.polkadot;
     });
 }
