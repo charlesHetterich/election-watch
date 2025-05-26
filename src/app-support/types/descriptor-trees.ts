@@ -33,61 +33,32 @@ export type FuncTree<T, P extends string, C extends ChainId> = {
         : FuncTree<T[K], P extends "" ? K & string : `${P}.${K & string}`, C>;
 };
 
-// async function buildPaths<
-//     C extends ChainId,
-//     P extends string,
-//     T extends object
-// >(chain: C, prefix: P, tree: T): Promise<FuncTree<T, P, C> | Promise<WatchLeaf>> {
-//     const out = {} as any;
-//     let isLeaf = true;
-//     for (const key of Object.keys(tree) as Array<keyof T>) {
-//         const node = (tree as any)[key];
-//         const q = prefix ? `${prefix}.${key as string}` : (key as string);
-
-//         if (node && typeof node === "object" && "_type" in node) {
-//             out[key] = await q;
-//         } else {
-//             out[key] = await buildPaths(q as any, node);
-//             isLeaf = false;
-//         }
-//     }
-//     if (isLeaf) {
-//         return prefix as string;
-//     }
-//     return out;
-// }
-
-function buildFuncPaths<
-    T extends object,
+/**
+ *
+ */
+async function buildFuncTree<
     C extends ChainId,
-    P extends string = ""
->(prefix: P, tree: T, chain: C): FuncTree<T, P, C> {
-    const out: any = {};
+    P extends string,
+    T extends object
+>(
+    chain: C,
+    prefix: P,
+    tree: T
+): Promise<FuncTree<T, P, C> | Promise<() => [WatchLeaf]>> {
+    // Leaf node
+    if (Object.keys(tree).length === 0) {
+        return (...args: any[]) => [{ chain, path: prefix, args, options: {} }];
+    }
+
+    // Recursive tree node
+    const out = {} as any;
     for (const key of Object.keys(tree) as Array<keyof T>) {
         const node = (tree as any)[key];
         const nextPrefix = prefix
             ? `${prefix}.${key as string}`
             : (key as string);
 
-        //   plain descriptor  ────────── event
-        if (
-            node &&
-            typeof node === "object" &&
-            "_type" in node &&
-            !("_args" in node)
-        ) {
-            out[key] = () => ({ chain, path: nextPrefix });
-            continue;
-        }
-
-        //   storage descriptor ───────── query w/ args
-        if (node && typeof node === "object" && "_args" in node) {
-            out[key] = (...args: any[]) => ({ chain, path: nextPrefix, args });
-            continue;
-        }
-
-        //   deeper pallet subtree
-        out[key] = buildFuncPaths(nextPrefix, node, chain);
+        out[key] = await buildFuncTree(chain, nextPrefix, node);
     }
     return out;
 }
@@ -109,16 +80,19 @@ type ObservablesMap = {
     storage: { [V in VirtualChainId]: ObservablesQueryMap<V> };
 };
 
+/**
+ *
+ */
 export const Observables: Readonly<ObservablesMap> = await (async () => {
     // Build event tree
     const eventEntries = await Promise.all(
         knownChains.map(async (id) => {
             const vId = toVirtual(id);
             const d = await D[id].descriptors;
-            const pm = (await buildFuncPaths(
+            const pm = (await buildFuncTree(
+                id,
                 `event`,
-                d.events,
-                id
+                d.events
             )) as ObservablesEventMap<typeof vId>;
 
             return [vId, pm] as const;
@@ -133,10 +107,10 @@ export const Observables: Readonly<ObservablesMap> = await (async () => {
         knownChains.map(async (id) => {
             const vId = toVirtual(id);
             const d = await D[id].descriptors;
-            const pm = (await buildFuncPaths(
+            const pm = (await buildFuncTree(
+                id,
                 `storage`,
-                d.storage,
-                id
+                d.storage
             )) as ObservablesQueryMap<typeof vId>;
 
             return [vId, pm] as const;
@@ -152,3 +126,32 @@ export const Observables: Readonly<ObservablesMap> = await (async () => {
 /**
  * TODO! tests + docs
  */
+if (import.meta.vitest) {
+    const { test, expect } = import.meta.vitest;
+    const { Observables } = await import("./descriptor-trees");
+
+    test("Correct event observable", () => {
+        const ev_obs = Observables.event.polkadot.Balances.Transfer();
+        expect(ev_obs).toEqual([
+            {
+                chain: "polkadot",
+                path: "event.Balances.Transfer",
+                args: [],
+                options: {},
+            },
+        ]);
+    });
+
+    test("Correct storage observable with key", () => {
+        const st_obs =
+            Observables.storage.polkadotAssetHub.Balances.Account("some-id");
+        expect(st_obs).toEqual([
+            {
+                chain: "polkadot_asset_hub",
+                path: "storage.Balances.Account",
+                args: ["some-id"],
+                options: {},
+            },
+        ]);
+    });
+}
