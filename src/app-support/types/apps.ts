@@ -66,17 +66,6 @@ if (import.meta.vitest) {
     const { test, expectTypeOf } = import.meta.vitest;
     const { Observables } = await import("./descriptor-trees");
 
-    // test("`WatchPath` structured type strings", () => {
-    //     expectTypeOf<"polkadot_asset_hub.event.balances.Transfer">().toExtend<WatchPath>();
-    //     expectTypeOf<"not_a_chain.event.balances.Transfer">().not.toExtend<WatchPath>();
-    // });
-
-    // test("`PartsOf` should properly split ChainIds from `WatchPath`", () => {
-    //     expectTypeOf<
-    //         PartsOf<"polkadot.thisPart.can_be.Anything...">
-    //     >().toEqualTypeOf<["polkadot", "thisPart.can_be.Anything..."]>();
-    // });
-
     test("`Payload` should capture correct `Observable` payload for a given `WatchPath`", () => {
         expectTypeOf<
             Payload<{
@@ -95,7 +84,7 @@ if (import.meta.vitest) {
         }>();
 
         const st_obs =
-            Observables.storage.polkadotAssetHub.Balances.Account("id");
+            Observables.storage.polkadotAssetHub.Balances.Account("some-id");
         expectTypeOf<Payload<(typeof st_obs)[number]>>().toEqualTypeOf<{
             key: [SS58String];
             value: {
