@@ -5,7 +5,7 @@ import { ChainId, Context, WatchLeaf } from "@lambdas/app-support";
  */
 export enum WatchType {
     EVENT = "event",
-    QUERY = "query",
+    STORAGE = "storage",
 }
 
 /**

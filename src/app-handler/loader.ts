@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import * as D from "@polkadot-api/descriptors";
+import { getTypedCodecs } from "polkadot-api";
 
 import {
     Context,
@@ -21,12 +23,13 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
     let leafHandlers: RouteHandler[] = [];
     for (const leaf of route.watching) {
         const path_arr = leaf.path.split(".");
-
-        // Start at the top this chain's API, and then
+        // Start at the top this chain's API/Codec, and then
         // traverse properties to the desired observable value
         let watchable: any = await manager.getAPI(leaf.chain);
+        let codec: any = await getTypedCodecs(D[leaf.chain]);
         for (const pth of path_arr) {
-            watchable = watchable[pth];
+            watchable = watchable[pth == WatchType.STORAGE ? "query" : pth];
+            codec = codec[pth == WatchType.STORAGE ? "query" : pth];
         }
 
         // Configure route handler
@@ -39,26 +42,34 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
                         }
                     });
                 });
-            case WatchType.QUERY:
+                break;
+            case WatchType.STORAGE:
+                const nArgs: number = codec.args.inner.length;
                 leafHandlers.push((context: Context<ChainId>) => {
-                    // TODO! we have to handle keys & choose between `watchValue` & `watchEntries`.
-                    // On `WatchEntries` need to map `deleted` & `upsert` entries
-                    watchable.watchValue().forEach(async (payload: any) => {
+                    // Decide to use `watchValue` or `watchEntries` based on available args
+                    // TODO! On `watchEntries` need to map `deleted` & `upsert` entries
+                    // TODO! have to map payload the format that apps expect
+                    (leaf.args.length < nArgs
+                        ? watchable.watchEntries
+                        : watchable.watchValue)(
+                        ...leaf.args,
+                        leaf.options
+                    ).forEach(async (payload: any) => {
                         if (await route.trigger(payload, context)) {
                             route.lambda(payload, context);
                         }
                     });
                 });
+                break;
             default:
-                // TODO! Instead of throwing, we should add
                 throw new Error(
-                    `Invalid call Observable route on chain ${leaf.chain} with path ${leaf.path}. Must start with "event" or "query".`
+                    `Invalid \`Observables\` route on chain ${leaf.chain} with path ${path_arr}. Must start with "event" or "query".`
                 );
         }
     }
 
     // Collect all leaf handlers into a single
-    // batch handler that calls all leaf handlers
+    // "batch" handler that calls all leaf handlers
     return async (context: Context<ChainId>) => {
         leafHandlers.forEach((handler) => {
             handler(context);

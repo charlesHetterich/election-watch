@@ -17,7 +17,7 @@ export type WatchLeaf<
     C extends ChainId = ChainId,
     P extends string = string,
     A extends any[] = any[],
-    O extends object = object
+    O extends object = any
 > = Expand<{ chain: C; path: P; args: A; options: O }>;
 
 /**
