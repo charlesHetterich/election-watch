@@ -13,7 +13,7 @@ import { appsDir, mockGetAPI } from "./mock";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import fs from "fs";
 import path from "path";
-import { TAppModule, WatchPath } from "@lambdas/app-support";
+import { TAppModule, WatchLeaf } from "@lambdas/app-support";
 import { getPolkadotSigner } from "polkadot-api/signer";
 import { Binary } from "polkadot-api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
@@ -47,7 +47,7 @@ async function getSpiedOnRoutes() {
         try {
             const appModule = (
                 await import(path.join(appsDir, appName, "index.ts"))
-            ).default as TAppModule<WatchPath[]>;
+            ).default as TAppModule<WatchLeaf[][]>;
 
             acc[appName] = appModule.routes.map((route) => {
                 return {
