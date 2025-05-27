@@ -142,4 +142,19 @@ describe("Substrate Lambdas Client", async () => {
             ).toEqual(10_000_000_000n);
         });
     });
+
+    describe("Routes", async () => {
+        it("should handle `Observables.event` leaves, and give payload in expected format", async () => {
+            expect.fail("not implemented");
+        });
+        it("should handle all caputured events from `Observables.event` with .all()", async () => {
+            expect.fail("not implemented");
+        });
+        it("should handle `Observables.storage` leaves and give payload in expected format, regardless of `.watchEntries` or `.watchValue`", async () => {
+            expect.fail("not implemented");
+        });
+        it("should filter `delete`, `upsert` payloads on `Observables.storage` according to `WatchLeaf.options`", async () => {
+            expect.fail("not implemented");
+        });
+    });
 });
