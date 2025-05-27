@@ -1,9 +1,12 @@
+dummy/
+*.ipynb
+
 .env
 .github/
 bin/
 .papi
-dummy/
 tsconfig.vitest-temp.json
+deno.json
 
 node_modules/
 *lock.json
