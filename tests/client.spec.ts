@@ -13,7 +13,7 @@ import { appsDir, mockGetAPI } from "./mock";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import fs from "fs";
 import path from "path";
-import { TAppModule, WatchPath } from "@lambdas/app-support";
+import { TAppModule, WatchLeaf } from "@lambdas/app-support";
 import { getPolkadotSigner } from "polkadot-api/signer";
 import { Binary } from "polkadot-api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
@@ -47,7 +47,7 @@ async function getSpiedOnRoutes() {
         try {
             const appModule = (
                 await import(path.join(appsDir, appName, "index.ts"))
-            ).default as TAppModule<WatchPath[]>;
+            ).default as TAppModule<WatchLeaf[][]>;
 
             acc[appName] = appModule.routes.map((route) => {
                 return {
@@ -140,6 +140,21 @@ describe("Substrate Lambdas Client", async () => {
             expect(
                 routes["single-event"][0].trigger.mock.calls[0][0].amount
             ).toEqual(10_000_000_000n);
+        });
+    });
+
+    describe("Routes", async () => {
+        it("should handle `Observables.event` leaves, and give payload in expected format", async () => {
+            expect.fail("not implemented");
+        });
+        it("should handle all caputured events from `Observables.event` with .all()", async () => {
+            expect.fail("not implemented");
+        });
+        it("should handle `Observables.storage` leaves and give payload in expected format, regardless of `.watchEntries` or `.watchValue`", async () => {
+            expect.fail("not implemented");
+        });
+        it("should filter `delete`, `upsert` payloads on `Observables.storage` according to `WatchLeaf.options`", async () => {
+            expect.fail("not implemented");
         });
     });
 });

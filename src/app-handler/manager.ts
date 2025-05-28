@@ -99,7 +99,7 @@ export class AppsManager {
                 chalk.green(app.name) +
                 "    " +
                 chalk.white.bold("watching ") +
-                chalk.grey(app.watchPaths)
+                chalk.grey(`[${app.chains.join(", ")}]`)
         );
         console.log(chalk.grey(app.description) + "\n");
     }
@@ -113,11 +113,6 @@ export class AppsManager {
         this.apps.forEach((app) => {
             this.logLaunchStatus(app);
             if (app.alive) {
-                const dd = app.chains.reduce((acc, chainId) => {
-                    acc[toVirtual(chainId)] = this.apis[chainId];
-                    return acc;
-                }, {} as Record<VirtualChainId, TypedApi<any>>);
-
                 const context = new Context(
                     Object.fromEntries(
                         app.chains.map(

@@ -1,13 +1,9 @@
-import { PlainDescriptor } from "polkadot-api";
-
 /**
- * Builds tree of descriptor types
+ * Utility type to expand a type into its properties.
+ *
+ * Used for fine-tuned control over what exactly displays when hovering over variables in IDE.
  */
-export type DescriptorTree<T> = {
-    [K in keyof T]: T[K] extends PlainDescriptor<infer U>
-        ? U
-        : DescriptorTree<T[K]>;
-};
+export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 
 /**
  * Converts a type string into a tuple of type strings
@@ -20,28 +16,15 @@ export type Split<
     : [S];
 
 /**
- * Extract specific type inside of a descriptor tree, given by a list of type strings
+ *  Union of `[] | [arg1] | [arg1, arg2] | ...` across some `Args`
  */
-export type DeepLookup<
-    T,
-    Path extends readonly string[] | string
-> = Path extends string
-    ? DeepLookup<T, Split<Path>>
-    : Path extends [infer K, ...infer Rest]
-    ? K extends keyof T
-        ? Rest extends string[]
-            ? DeepLookup<T[K], Rest>
-            : T[K]
-        : never
-    : T;
+export type PartialArgs<Args extends readonly any[]> = Args extends [
+    ...infer Rest,
+    any
+]
+    ? PartialArgs<Rest> | Args
+    : Args;
 
 /**
- * Map of all paths in a descriptor tree
+ * Tests covered by sibling files
  */
-export type PathMap<T, P extends string = ""> = {
-    [K in keyof T]: T[K] extends PlainDescriptor<any>
-        ? P extends "" // leaf
-            ? K & string
-            : `${P}.${K & string}`
-        : PathMap<T[K], P extends "" ? K & string : `${P}.${K & string}`>; // subtree
-};
