@@ -9,7 +9,6 @@ import {
     Context,
     ContextualAPIs,
     toVirtual,
-    VirtualChainId,
 } from "@lambdas/app-support";
 import { LambdaApp } from "./app";
 import { Chain, Client } from "polkadot-api/smoldot";
@@ -33,6 +32,11 @@ export class AppsManager {
 
     constructor() {
         this.lightClient = start();
+    }
+
+    public async shutdown() {
+        this.apps.forEach((app) => app.shutdown());
+        await this.lightClient.terminate();
     }
 
     /**
@@ -104,7 +108,7 @@ export class AppsManager {
         console.log(chalk.grey(app.description) + "\n");
     }
 
-    async launch() {
+    launch() {
         console.log(
             "\n" + chalk.yellowBright.bold("Building & launching apps")
         );
@@ -120,9 +124,7 @@ export class AppsManager {
                         )
                     ) as ContextualAPIs<(typeof app.chains)[number]>
                 );
-                app.handlers.forEach((handler) => {
-                    handler(context);
-                });
+                app.launch(context);
             }
         });
     }

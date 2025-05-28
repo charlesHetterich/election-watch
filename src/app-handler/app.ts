@@ -1,3 +1,4 @@
+import { Subscription } from "rxjs";
 import { ChainId, Context, WatchLeaf } from "@lambdas/app-support";
 
 /**
@@ -9,9 +10,13 @@ export enum WatchType {
 }
 
 /**
- * A function that launches & handles a `TRoute` specification
+ * A function that handles launching a `TRoute` specification,
+ *
+ * @returns `Subscription[]` corresponding to a `TRoute`'s `WatchLeaf[]`
  */
-export type RouteHandler = (context: Context<ChainId>) => void;
+export type RouteHandler = (
+    context: Context<ChainId>
+) => [WatchLeaf, Subscription][];
 
 /**
  * The object that is derived from loading an `AppModule` specification
@@ -25,8 +30,10 @@ export type RouteHandler = (context: Context<ChainId>) => void;
  * @property watchPaths  - The paths that the app is watching
  * @property handlers    - The handlers for the app
  * @property logs        - The logs for the app
+ * @property subscriptions -
  */
 export class LambdaApp {
+    private subscriptions: Map<WatchLeaf, Subscription> = new Map();
     constructor(
         public name: string,
         public description: string,
@@ -35,4 +42,22 @@ export class LambdaApp {
         public handlers: RouteHandler[],
         public logs: string[] = []
     ) {}
+
+    launch(context: Context<ChainId>) {
+        this.handlers.forEach((handler) => {
+            handler(context).forEach(([leaf, subscription]) => {
+                this.subscriptions.set(leaf, subscription);
+                subscription.add(() => {
+                    this.subscriptions.delete(leaf);
+                });
+            });
+        });
+    }
+
+    shutdown() {
+        this.subscriptions.forEach((subscription) => {
+            subscription.unsubscribe();
+        });
+        this.alive = false;
+    }
 }

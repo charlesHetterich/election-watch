@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { Subscription } from "rxjs";
 import * as D from "@polkadot-api/descriptors";
 import { getTypedCodecs } from "polkadot-api";
 
@@ -41,7 +42,9 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
     route: TRoute<WLs>,
     manager: AppsManager
 ): Promise<RouteHandler> {
-    let leafHandlers: RouteHandler[] = [];
+    let leafHandlers: ((
+        context: Context<ChainId>
+    ) => [WatchLeaf, Subscription])[] = [];
     for (const leaf of route.watching) {
         const path_arr = leaf.path.split(".");
         // Start at the top this chain's API/Codec, and then
@@ -56,53 +59,68 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
         // Configure route handler
         switch (path_arr[0]) {
             case WatchType.EVENT:
-                leafHandlers.push((context: Context<ChainId>) => {
-                    watchable.watch().forEach(async (data: any) => {
+                leafHandlers.push((context: Context<ChainId>) => [
+                    leaf,
+                    watchable.watch().subscribe(async (data: any) => {
                         if (await route.trigger(data.payload, context)) {
                             route.lambda(data.payload, context);
                         }
-                    });
-                });
+                    }) as Subscription,
+                ]);
                 break;
             case WatchType.STORAGE:
                 const nArgs: number = codec.args.inner.length;
                 leafHandlers.push((context: Context<ChainId>) => {
                     // Decide to use `watchValue` or `watchEntries` based on available args
                     if (leaf.args.length < nArgs) {
-                        watchable
-                            .watchEntries(
-                                ...leaf.args,
-                                leaf.options.finalized
-                                    ? undefined
-                                    : { at: "best" }
-                            )
-                            .forEach(async (payload: WatchEntriesPayload) => {
-                                const refinedPayloads = payload.entries.map(
-                                    (p) => {
-                                        return { key: p.args, value: p.value };
+                        return [
+                            leaf,
+                            watchable
+                                .watchEntries(
+                                    ...leaf.args,
+                                    leaf.options.finalized
+                                        ? undefined
+                                        : { at: "best" }
+                                )
+                                .subscribe(
+                                    async (payload: WatchEntriesPayload) => {
+                                        const refinedPayloads =
+                                            payload.entries.map((p) => {
+                                                return {
+                                                    key: p.args,
+                                                    value: p.value,
+                                                };
+                                            }) as any[];
+                                        for (const p of refinedPayloads) {
+                                            if (
+                                                await route.trigger(p, context)
+                                            ) {
+                                                route.lambda(p, context);
+                                            }
+                                        }
                                     }
-                                ) as any[];
-                                for (const p of refinedPayloads) {
+                                ),
+                        ];
+                    } else {
+                        return [
+                            leaf,
+                            watchable
+                                .watchValue(
+                                    ...leaf.args,
+                                    leaf.options.finalized
+                                        ? "finalized"
+                                        : "best"
+                                )
+                                .subscribe(async (payload: any) => {
+                                    const p = {
+                                        key: leaf.args,
+                                        value: payload,
+                                    } as any;
                                     if (await route.trigger(p, context)) {
                                         route.lambda(p, context);
                                     }
-                                }
-                            });
-                    } else {
-                        watchable
-                            .watchValue(
-                                ...leaf.args,
-                                leaf.options.finalized ? "finalized" : "best"
-                            )
-                            .forEach(async (payload: any) => {
-                                const p = {
-                                    key: leaf.args,
-                                    value: payload,
-                                } as any;
-                                if (await route.trigger(p, context)) {
-                                    route.lambda(p, context);
-                                }
-                            });
+                                }),
+                        ];
                     }
                 });
                 break;
@@ -115,11 +133,8 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
 
     // Collect all leaf handlers into a single
     // "batch" handler that calls all leaf handlers
-    return async (context: Context<ChainId>) => {
-        leafHandlers.forEach((handler) => {
-            handler(context);
-        });
-    };
+    return (context: Context<ChainId>) =>
+        leafHandlers.map((handler) => handler(context));
 }
 
 /**
