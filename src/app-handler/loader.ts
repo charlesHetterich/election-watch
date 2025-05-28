@@ -33,7 +33,9 @@ type WatchEntriesPayload = {
 
 /**
  * Creates a route handler from a route and an API
- * TODO! refactor & better types
+ *
+ * TODO! refactor & better types. whole thing needs
+ *       to be validated w/ integration tests next.
  */
 async function handlerFromRoute<WLs extends WatchLeaf[]>(
     route: TRoute<WLs>,
@@ -66,8 +68,6 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
                 const nArgs: number = codec.args.inner.length;
                 leafHandlers.push((context: Context<ChainId>) => {
                     // Decide to use `watchValue` or `watchEntries` based on available args
-                    // TODO! On `watchEntries` need to map `deleted` & `upsert` entries
-                    // TODO! have to map payload the format that apps expect
                     if (leaf.args.length < nArgs) {
                         watchable
                             .watchEntries(
@@ -77,8 +77,6 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
                                     : { at: "best" }
                             )
                             .forEach(async (payload: WatchEntriesPayload) => {
-                                // TODO! Transform payload into format we expect.
-                                // Take into account `leaf.options.changeType`.
                                 const refinedPayloads = payload.entries.map(
                                     (p) => {
                                         return { key: p.args, value: p.value };
