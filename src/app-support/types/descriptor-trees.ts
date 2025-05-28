@@ -29,7 +29,7 @@ export type WatchLeaf<
     C extends ChainId = ChainId,
     P extends string = string,
     A extends any[] = any[],
-    O extends object = any
+    O extends object = EventOptions & StorageOptions
 > = Expand<{ chain: C; path: P; args: A; options: O }>;
 
 /**
@@ -109,13 +109,15 @@ async function buildFuncTree<
                 /**
                  * Is the last argument an "options" object?
                  *
-                 * NOTE! In the case that no options are provided, and the last given key
-                 * is an object who's properties all match the available properties some
-                 * "options" object, then this will give a false positive, mistakenly eating
-                 * a key as our "options".
+                 * NOTE! In the case that no options are provided, and the last given *key*
+                 * is an object who's properties all match the available properties of some
+                 * *options* object, then this will give a false positive, mistakenly eating
+                 * a *key* as our *options*.
                  *
-                 * The chances of this conflict actually happening are very low, so for now
-                 * we accept this potential edge case for the sake of nice API design.
+                 * The chances of this conflict actually happening are very low and an easy fix,
+                 * (use builder pattern .withOptions() which internally creates an explicit
+                 * `new StorageOptions()/EventOptions()`) so for now we accept this potential
+                 * edge case for the sake of nice API design.
                  */
                 typeof lastArg === "object" &&
                 (Object.keys(lastArg).every((key) =>

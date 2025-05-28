@@ -13,8 +13,27 @@ import {
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
 
+type WatchEntriesPayload = {
+    block: any;
+    deltas: null | {
+        deleted: Array<{
+            args: any;
+            value: NonNullable<any>;
+        }>;
+        upserted: Array<{
+            args: any;
+            value: NonNullable<any>;
+        }>;
+    };
+    entries: Array<{
+        args: any;
+        value: NonNullable<any>;
+    }>;
+};
+
 /**
  * Creates a route handler from a route and an API
+ * TODO! refactor & better types
  */
 async function handlerFromRoute<WLs extends WatchLeaf[]>(
     route: TRoute<WLs>,
@@ -49,16 +68,44 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
                     // Decide to use `watchValue` or `watchEntries` based on available args
                     // TODO! On `watchEntries` need to map `deleted` & `upsert` entries
                     // TODO! have to map payload the format that apps expect
-                    (leaf.args.length < nArgs
-                        ? watchable.watchEntries
-                        : watchable.watchValue)(
-                        ...leaf.args,
-                        leaf.options
-                    ).forEach(async (payload: any) => {
-                        if (await route.trigger(payload, context)) {
-                            route.lambda(payload, context);
-                        }
-                    });
+                    if (leaf.args.length < nArgs) {
+                        watchable
+                            .watchEntries(
+                                ...leaf.args,
+                                leaf.options.finalized
+                                    ? undefined
+                                    : { at: "best" }
+                            )
+                            .forEach(async (payload: WatchEntriesPayload) => {
+                                // TODO! Transform payload into format we expect.
+                                // Take into account `leaf.options.changeType`.
+                                const refinedPayloads = payload.entries.map(
+                                    (p) => {
+                                        return { key: p.args, value: p.value };
+                                    }
+                                ) as any[];
+                                for (const p of refinedPayloads) {
+                                    if (await route.trigger(p, context)) {
+                                        route.lambda(p, context);
+                                    }
+                                }
+                            });
+                    } else {
+                        watchable
+                            .watchValue(
+                                ...leaf.args,
+                                leaf.options.finalized ? "finalized" : "best"
+                            )
+                            .forEach(async (payload: any) => {
+                                const p = {
+                                    key: leaf.args,
+                                    value: payload,
+                                } as any;
+                                if (await route.trigger(p, context)) {
+                                    route.lambda(p, context);
+                                }
+                            });
+                    }
                 });
                 break;
             default:
@@ -137,4 +184,12 @@ export async function loadApps(appsDir: string, manager: AppsManager) {
     } else {
         throw new Error(`Apps directory ${appsDir} not found.`);
     }
+}
+
+if (import.meta.vitest) {
+    const { test, expect, describe } = import.meta.vitest;
+
+    test("Correct event observable", () => {
+        expect("").toEqual("todo!");
+    });
 }
