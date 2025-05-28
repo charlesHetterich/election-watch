@@ -227,7 +227,7 @@ export const Observables: Readonly<ObservablesMap> = await (async () => {
 
 if (import.meta.vitest) {
     const { test, expect, describe } = import.meta.vitest;
-    const { Observables } = await import("./descriptor-trees");
+    const { Observables } = await import("./observables");
 
     test("Correct event observable", () => {
         const ev_obs = Observables.event.polkadot.Balances.Transfer();

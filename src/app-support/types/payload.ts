@@ -2,7 +2,7 @@ import * as D from "@polkadot-api/descriptors";
 import { PlainDescriptor, StorageDescriptor } from "polkadot-api";
 
 import { Expand, Split } from "./helpers";
-import { WatchLeaf } from "./descriptor-trees";
+import { WatchLeaf } from "./observables";
 
 /**
  * The structure of a payload under `Observables.event`

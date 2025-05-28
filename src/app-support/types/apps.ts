@@ -1,7 +1,7 @@
 import * as D from "@polkadot-api/descriptors";
 
 import { Payload } from "./payload";
-import { WatchLeaf } from "./descriptor-trees";
+import { WatchLeaf } from "./observables";
 import { Context } from "../context";
 
 /**
@@ -56,7 +56,7 @@ export function App<const WPs extends readonly WatchLeaf[][]>(
 import type { SS58String, TypedApi } from "polkadot-api";
 if (import.meta.vitest) {
     const { test, expectTypeOf } = import.meta.vitest;
-    const { Observables } = await import("./descriptor-trees");
+    const { Observables } = await import("./observables");
 
     test("`Payload` should capture correct `Observable` payload for a given `WatchPath`", () => {
         expectTypeOf<

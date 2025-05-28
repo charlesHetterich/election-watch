@@ -1,3 +1,3 @@
 export * from "./apps";
-export * from "./descriptor-trees";
+export * from "./observables";
 export * from "./known-chains";
