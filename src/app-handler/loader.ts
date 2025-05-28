@@ -188,8 +188,7 @@ export async function loadApps(appsDir: string, manager: AppsManager) {
 
 if (import.meta.vitest) {
     const { test, expect, describe } = import.meta.vitest;
-
-    test("Correct event observable", () => {
+    test("TODO! Implement tests", () => {
         expect("").toEqual("todo!");
     });
 }
