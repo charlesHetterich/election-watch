@@ -1,20 +1,12 @@
 import * as D from "@polkadot-api/descriptors";
 
-import { PayloadLookup, Split } from "./helpers";
+import { Payload } from "./payload";
 import { WatchLeaf } from "./descriptor-trees";
 import { Context } from "../context";
 
 /**
  * The expected type of a payload for a given `WatchPath`
  */
-export type Payload<WP extends WatchLeaf> = PayloadLookup<
-    {
-        event: (typeof D)[WP["chain"]]["descriptors"]["pallets"]["__event"];
-
-        storage: (typeof D)[WP["chain"]]["descriptors"]["pallets"]["__storage"];
-    },
-    Split<WP["path"]>
->;
 
 /**
  * Specifies a single route within an lambda application.
