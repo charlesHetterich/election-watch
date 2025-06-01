@@ -1,12 +1,8 @@
 import * as D from "@polkadot-api/descriptors";
 
-import { Payload } from "./payload";
+import { Payload, PossiblePayload } from "./payload";
 import { WatchLeaf } from "./observables";
 import { Context } from "../context";
-
-/**
- * The expected type of a payload for a given `WatchPath`
- */
 
 /**
  * Specifies a single route within an lambda application.
@@ -17,36 +13,36 @@ import { Context } from "../context";
  * @property trigger  - Specifies the conditions under which we will take some `lambda` action
  * @property lambda   - The action to upon `trigger`'s conditions being satisfied
  */
-export interface TRoute<
-    WP extends WatchLeaf[],
-    WPs extends readonly WatchLeaf[][] = [WP]
-> {
-    watching: WP;
+export type TRoute<
+    WLs extends readonly WatchLeaf[],
+    WLss extends readonly WLs[] = [WLs]
+> = {
+    watching: WLs;
     trigger: (
-        payload: Payload<WP[0]>, // TODO! should be union of all WatchLeafs
-        context: Context<WPs[number][number]["chain"]>
+        payload: PossiblePayload<WLs>,
+        context: Context<WLss[number][number]["chain"]>
     ) => boolean | Promise<boolean>;
     lambda: (
-        payload: Payload<WP[0]>, // TODO! should be union of all WatchLeafs
-        context: Context<WPs[number][number]["chain"]>
+        payload: PossiblePayload<WLs>,
+        context: Context<WLss[number][number]["chain"]>
     ) => void | Promise<void>;
-}
+};
 
 /**
  * Specifies a complete lambda application as a collection of routes and some peripheral settings.
  */
-export interface TAppModule<WPs extends readonly WatchLeaf[][]> {
+export interface TAppModule<WLss extends readonly WatchLeaf[][]> {
     description: string;
-    routes: { [K in keyof WPs]: TRoute<WPs[K], WPs> };
+    routes: { [K in keyof WLss]: TRoute<WLss[K], WLss> };
 }
 
 /**
  * Convenience builder function for specifying a lambda `TAppModule` with built-in type hints.
  */
-export function App<const WPs extends readonly WatchLeaf[][]>(
+export function App<const WLss extends readonly WatchLeaf[][]>(
     description: string,
-    ...routes: { [K in keyof WPs]: TRoute<WPs[K], WPs> }
-): TAppModule<WPs> {
+    ...routes: { [K in keyof WLss]: TRoute<WLss[K], WLss> }
+): TAppModule<WLss> {
     return {
         description,
         routes: routes,

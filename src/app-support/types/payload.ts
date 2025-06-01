@@ -11,6 +11,9 @@ type EventPayload<Value> = Value;
 
 /**
  * The structure of a payload under `Observables.storage`
+ *
+ * @property Key   - the actual full set of keys used to access this storage item
+ * @property Value - the latest value of the storage item
  */
 type StoragePayload<Key, Value> = Expand<{
     key: Key;
@@ -36,6 +39,9 @@ export type PayloadLookup<
     ? EventPayload<Value>
     : never;
 
+/**
+ * The expected type of a payload for a given `WatchLeaf`
+ */
 export type Payload<WL extends WatchLeaf> = PayloadLookup<
     {
         event: (typeof D)[WL["chain"]]["descriptors"]["pallets"]["__event"];
@@ -44,3 +50,50 @@ export type Payload<WL extends WatchLeaf> = PayloadLookup<
     },
     Split<WL["path"]>
 >;
+
+/**
+ * Intersection of all possible payload types for a given array of `WatchLeaf`s.
+ *
+ * Use {@link narrowPayload} to narrow the payload type
+ */
+export type PossiblePayload<WLs extends readonly WatchLeaf[]> = WLs extends [
+    infer W extends WatchLeaf
+]
+    ? Payload<W>
+    : WLs extends readonly [
+          infer First extends WatchLeaf,
+          ...infer Rest extends readonly WatchLeaf[]
+      ]
+    ? Payload<First> | PossiblePayload<Rest>
+    : never;
+
+/**
+ * Reveals hidden properties on a payload
+ *
+ * Intended for internal use only
+ */
+type PayloadExtension = {
+    __meta: {
+        chain: WatchLeaf["chain"];
+        path: WatchLeaf["path"];
+    };
+};
+/**
+ * Alias for {@link PayloadExtension} exposed for experimental use
+ */
+export type _PayloadExtension = PayloadExtension;
+
+/**
+ * Conditionally make a payload's type narrowed, when working
+ * with payloads from more than one `WatchLeaf`
+ */
+export function narrowPayload<T extends WatchLeaf>(
+    payload: Payload<any>,
+    watchLeaf: T
+): payload is Payload<T> {
+    const _payload = payload as PayloadExtension;
+    return (
+        _payload.__meta.chain === watchLeaf.chain &&
+        _payload.__meta.path === watchLeaf.path
+    );
+}

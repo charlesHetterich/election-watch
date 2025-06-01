@@ -77,12 +77,12 @@ export type FuncTree<T, P extends string, C extends ChainId> = {
         ? // Storage leaf
           (
               ...args: [...PartialArgs<Keys>, options?: Expand<StorageOptions>]
-          ) => [WatchLeaf<C, `${P}.${K & string}`, PartialArgs<Keys>, {}>]
+          ) => [WatchLeaf<C, `${P}.${K & string}`, PartialArgs<Keys>>]
         : T[K] extends PlainDescriptor<any>
         ? // Event leaf
           (
               ...args: [options?: Expand<EventOptions>]
-          ) => [WatchLeaf<C, `${P}.${K & string}`, [], {}>]
+          ) => [WatchLeaf<C, `${P}.${K & string}`, []>]
         : // Recurse next layer of tree
           FuncTree<T[K], P extends "" ? K & string : `${P}.${K & string}`, C>;
 };

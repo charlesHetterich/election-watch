@@ -62,8 +62,15 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
                 leafHandlers.push((context: Context<ChainId>) => [
                     leaf,
                     watchable.watch().subscribe(async (data: any) => {
-                        if (await route.trigger(data.payload, context)) {
-                            route.lambda(data.payload, context);
+                        const payload = {
+                            ...data.payload,
+                            __meta: {
+                                chain: leaf.chain,
+                                path: leaf.path,
+                            },
+                        };
+                        if (await route.trigger(payload, context)) {
+                            route.lambda(payload, context);
                         }
                     }) as Subscription,
                 ]);
@@ -89,6 +96,10 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
                                                 return {
                                                     key: p.args,
                                                     value: p.value,
+                                                    __meta: {
+                                                        chain: leaf.chain,
+                                                        path: leaf.path,
+                                                    },
                                                 };
                                             }) as any[];
                                         for (const p of refinedPayloads) {
@@ -115,6 +126,10 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
                                     const p = {
                                         key: leaf.args,
                                         value: payload,
+                                        __meta: {
+                                            chain: leaf.chain,
+                                            path: leaf.path,
+                                        },
                                     } as any;
                                     if (await route.trigger(p, context)) {
                                         route.lambda(p, context);
