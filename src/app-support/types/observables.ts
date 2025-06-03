@@ -9,6 +9,7 @@ import {
     VirtualChainId,
     ChainId,
 } from "./known-chains";
+import { TRoute } from "./apps";
 
 /**
  * ## WatchLeaf
@@ -17,7 +18,7 @@ import {
  * Regardless of which root path we take from `Observables`, all leaves share this
  * common structure. One `WatchLeaf` always corresponds to a single "entity".
  *
- * We can handle more complex watch patterns in a single `TRoute` with lists of
+ * We can handle more complex watch patterns in a single {@link TRoute} with lists of
  * `WatchLeaf`s, or by using a higher level, builder pattern based `WatchCollection` class.
  *
  * @property chain - The chain this leaf is for
@@ -69,38 +70,98 @@ export class StorageOptions {
 }
 
 /**
+ * A function which may take arguments, and returns an array of `WatchLeaf`s.
+ */
+type LeafFunction<
+    WLs extends readonly WatchLeaf[] = WatchLeaf[],
+    Args extends readonly any[] = any[]
+> = (...args: Args) => WLs;
+
+/**
  * A recursive type that translates a single blockchains `event` & `storage`
  * descriptors into a Substrate Lambdas `Observables` sub-tree.
  */
-export type FuncTree<T, P extends string, C extends ChainId> = {
+export type FuncTree<
+    T,
+    P extends string,
+    C extends ChainId,
+    TreeExtension = {}
+> = {
     [K in keyof T]: T[K] extends StorageDescriptor<infer Keys, any, any, any>
         ? // Storage leaf
-          (
-              ...args: [...PartialArgs<Keys>, options?: Expand<StorageOptions>]
-          ) => [WatchLeaf<C, `${P}.${K & string}`, PartialArgs<Keys>>]
+          LeafFunction<
+              [WatchLeaf<C, `${P}.${K & string}`, PartialArgs<Keys>>],
+              [...PartialArgs<Keys>, options?: Expand<StorageOptions>]
+          >
         : T[K] extends PlainDescriptor<any>
         ? // Event leaf
-          (
-              ...args: [options?: Expand<EventOptions>]
-          ) => [WatchLeaf<C, `${P}.${K & string}`, []>]
-        : // Recurse next layer of tree
-          FuncTree<T[K], P extends "" ? K & string : `${P}.${K & string}`, C>;
+          LeafFunction<
+              [WatchLeaf<C, `${P}.${K & string}`, []>],
+              [options?: Expand<EventOptions>]
+          >
+        : // Subtree node
+          FuncTree<
+              T[K],
+              P extends "" ? K & string : `${P}.${K & string}`,
+              C,
+              TreeExtension
+          >;
+} & TreeExtension;
+
+/**
+ * Utility type to extract all WatchLeaf types within a tree structure
+ */
+type ExtractLeaves<T> = T extends LeafFunction
+    ? ReturnType<T>
+    : ExtractLeaves<T[keyof T]>;
+
+export const EventTreeExtension = {
+    /**
+     * Watch all *observables* under this event tree node
+     *
+     * @param options - Options applied to all leaves in this tree
+     */
+    all<const Self, O extends Expand<EventOptions>>(
+        this: Self,
+        options?: O
+    ): ExtractLeaves<Self> {
+        const leaves: WatchLeaf[] = [];
+
+        for (const key of Object.keys(this as Record<string, unknown>)) {
+            if (key in EventTreeExtension) continue;
+
+            const subTree = (this as any)[key];
+
+            if (typeof subTree === "function") {
+                leaves.push(subTree(options));
+            } else {
+                leaves.push(...subTree.all(options));
+            }
+        }
+        return leaves.flat() as ExtractLeaves<Self>;
+    },
 };
 
 /**
- *  Builds a `FuncTree` for a given chain's `descriptors` object.
+ * Builds a `FuncTree` for a given chain's `descriptors` object.
+ *
+ * All members of our `tree` are either:
+ * - An empty object, which we skip
+ *    - This may happen, for example, under the *events* tree for a pallet with no events
+ * - An object with members, which we recurse into
+ * - A number, which represents a leaf
+ *
+ * @param chain - The Id of the chain this tree is for
+ * @param prefix - The `.` separated path to this point in the tree
+ * @param tree - A position within an `IDescriptors` tree.
  */
 async function buildFuncTree<
     C extends ChainId,
     P extends string,
     T extends object
->(
-    chain: C,
-    prefix: P,
-    tree: T
-): Promise<FuncTree<T, P, C> | Promise<() => [WatchLeaf]>> {
+>(chain: C, prefix: P, tree: T): Promise<FuncTree<T, P, C> | LeafFunction> {
     // Leaf node
-    if (Object.keys(tree).length === 0) {
+    if (typeof tree == "number") {
         return (...args: any[]) => {
             const lastArg = args[args.length - 1];
             let options = {};
@@ -142,12 +203,20 @@ async function buildFuncTree<
     // Recursive tree node
     const out = {} as any;
     for (const key of Object.keys(tree) as Array<keyof T>) {
+        if (Object.keys(tree).length == 0) continue;
         const node = (tree as any)[key];
         const nextPrefix = prefix
             ? `${prefix}.${key as string}`
             : (key as string);
 
         out[key] = await buildFuncTree(chain, nextPrefix, node);
+    }
+
+    /**
+     * Handle {@link EventTreeExtension}
+     */
+    if (prefix.startsWith("event")) {
+        Object.assign(out, EventTreeExtension);
     }
     return out;
 }
@@ -158,7 +227,8 @@ async function buildFuncTree<
 type ObservablesEventMap<V extends VirtualChainId> = FuncTree<
     (typeof D)[FromVirtual<V>]["descriptors"]["pallets"]["__event"],
     `event`,
-    FromVirtual<V>
+    FromVirtual<V>,
+    typeof EventTreeExtension
 >;
 
 /**
@@ -195,7 +265,7 @@ export const Observables: Readonly<ObservablesMap> = await (async () => {
                 id,
                 `event`,
                 d.events
-            )) as ObservablesEventMap<typeof vId>;
+            )) as unknown as ObservablesEventMap<typeof vId>;
 
             return [vId, pm] as const;
         })
