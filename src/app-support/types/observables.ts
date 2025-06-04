@@ -70,7 +70,22 @@ export class StorageOptions {
 }
 
 /**
- * A function which may take arguments, and returns an array of `WatchLeaf`s.
+ * ## LeafFunction
+ *
+ * The leaf-node of a {@link FuncTree}. A function which may take arguments,
+ * and produces a list of {@link WatchLeaf}s. All `LeafFunction`'s are accessed
+ * via {@link Observables}.
+ *
+ * ```
+ * // Produces a single watch leaf watching the `Balances.Transfer`
+ * Observables.event.polkadot.Balances.Transfer();
+ *
+ * // Produces a single watch leaf with args `[some-account-id]`
+ * Observables.storage.polkadot.Balances.Account("some-account-id");
+ *
+ * // Produces many watch leaves
+ * Observables.event.polkadot.all();
+ * ```
  *
  * @template WLs  The type of `WatchLeaf`s this function returns
  * @template Arg The type of arguments this function takes
@@ -85,8 +100,8 @@ type LeafFunction<
  * descriptors into a Substrate Lambdas `Observables` sub-tree.
  *
  * @template T             - The type of the descriptors tree for this chain
- * @template Pth             - The path to this point in the tree, e.g. `event.Balances.Transfer`
- * @template CId             - The chain this tree is for
+ * @template Pth           - The path to this point in the tree, e.g. `event.Balances.Transfer`
+ * @template CId           - The chain this tree is for
  * @template TreeExtension - Additional properties to add to each node in the tree
  */
 export type FuncTree<
