@@ -28,11 +28,11 @@ Description of how this app works & what it does
 `;
 
 export default App(description, {
-    watching: Observables.SomeChainId.event.SomePalletId.SomeEvent,
-    trigger: (payload, context) => {
+    watching: Observables.event.SomeChainId.SomePalletId.SomeEvent(),
+    trigger(payload, context) {
         // do some filtering . . .
     },
-    lambda: (payload, context) => {
+    lambda(payload, context) {
         // do something upon triggering . . .
     },
 }, { /** More routes across many chains . . . */ });
@@ -41,7 +41,7 @@ export default App(description, {
 - acts as a point of *discovery* for what is available across the polkadot ecosystem.
 - captures real-valued meta data about an application (such as *chain dependencies* of this application)
 - seemlessly makes relevant type information available to developers
-- **[todo!]** allows specifying *Blanket* routes on events, which observe many events at once. For example, we may specify `Observables.Polkadot.event.Balances`to watch all events within Polkadot's *Balances* pallet, or `Observables.Polkadot.event` to watch all Polkadot events, with a single route.
+- `.all()`: allows specifying *Blanket* routes on events, which observe many events at once. For example, we may specify `Observables.event.Polkadot.Balances.all()`to watch all events within Polkadot's *Balances* pallet, or `Observables.event.Polkadot.all()` to watch all Polkadot events, with a single route.
 
 You can refer to the list of supported [known chains](https://github.com/polkadot-api/polkadot-api/tree/main/packages/known-chains).
 
