@@ -97,3 +97,10 @@ export function narrowPayload<T extends WatchLeaf>(
         _payload.__meta.path === watchLeaf.path
     );
 }
+
+if (import.meta.vitest) {
+    const { test, expect, describe } = import.meta.vitest;
+    test("TODO! Implement tests", () => {
+        expect("").toEqual("todo!");
+    });
+}

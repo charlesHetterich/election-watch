@@ -34,6 +34,7 @@ export type RouteHandler = (
  */
 export class LambdaApp {
     private subscriptions: Map<WatchLeaf, Subscription> = new Map();
+
     constructor(
         public name: string,
         public description: string,
