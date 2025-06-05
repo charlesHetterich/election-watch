@@ -1,15 +1,15 @@
 import { PlainDescriptor, StorageDescriptor } from "polkadot-api";
 import * as D from "@polkadot-api/descriptors";
 
-import { Expand, PartialArgs } from "./helpers";
+import { Expand, PartialArgs } from "../helpers";
 import {
     knownChains,
     toVirtual,
     FromVirtual,
     VirtualChainId,
     ChainId,
-} from "./known-chains";
-import { TRoute } from "./apps";
+} from "../known-chains";
+import { TRoute } from "../apps";
 
 /**
  * ## WatchLeaf
@@ -322,7 +322,7 @@ export const Observables: Readonly<ObservablesMap> = await (async () => {
 
 if (import.meta.vitest) {
     const { test, expect, describe, expectTypeOf } = import.meta.vitest;
-    const { Observables } = await import("./observables");
+    const { Observables } = await import(".");
 
     describe("WatchLeaf components & helpers", () => {
         describe("WatchLeaf options", () => {
