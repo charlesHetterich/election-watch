@@ -1,24 +1,9 @@
 import * as D from "@polkadot-api/descriptors";
 import { PlainDescriptor, StorageDescriptor } from "polkadot-api";
 
-import { Expand, Split } from "./helpers";
+import { Split } from "./helpers";
 import { WatchLeaf } from "./observables";
-
-/**
- * The structure of a payload under `Observables.event`
- */
-type EventPayload<Value> = Value;
-
-/**
- * The structure of a payload under `Observables.storage`
- *
- * @property Key   - the actual full set of keys used to access this storage item
- * @property Value - the latest value of the storage item
- */
-type StoragePayload<Key, Value> = Expand<{
-    key: Key;
-    value: Value;
-}>;
+import { ROOTS } from "../types/observables";
 
 /**
  * Extract specific type inside of a descriptor tree, given by a list of type strings
@@ -33,10 +18,10 @@ export type PayloadLookup<
         : never
     : // Storage leaf
     TreeNode extends StorageDescriptor<infer Key, infer Value, any, any>
-    ? StoragePayload<Key, Value>
+    ? ROOTS.storage.PayloadStructure<Key, Value>
     : // Event leaf
     TreeNode extends PlainDescriptor<infer Value>
-    ? EventPayload<Value>
+    ? ROOTS.event.PayloadStructure<Value>
     : never;
 
 /**

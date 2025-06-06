@@ -5,11 +5,18 @@ import { Expand, PartialArgs } from "../helpers";
 import {
     knownChains,
     toVirtual,
-    FromVirtual,
     VirtualChainId,
     ChainId,
 } from "../known-chains";
 import { TRoute } from "../apps";
+
+// Roots
+import * as EVENT from "./event";
+import * as STORAGE from "./storage";
+export namespace ROOTS {
+    export import event = EVENT;
+    export import storage = STORAGE;
+}
 
 /**
  * ## WatchLeaf
@@ -30,44 +37,8 @@ export type WatchLeaf<
     CId extends ChainId = ChainId,
     Pth extends string = string,
     Arg extends any[] = any[],
-    Opt extends object = EventOptions & StorageOptions
+    Opt extends object = ROOTS.event.LeafOptions & ROOTS.storage.LeafOptions
 > = Expand<{ chain: CId; path: Pth; args: Arg; options: Opt }>;
-
-/**
- * Options for a {@link WatchLeaf} leaf for an *event observable*
- */
-export class EventOptions {
-    constructor(options: {} = {}) {}
-}
-
-/**
- * Options for `Observables.storage` leaves
- */
-export class StorageOptions {
-    /**
-     * Specifies whether to hold off on triggering until a change to this leaf's storage
-     * item is finalized— or trigger immedidately when any changes are detected on the "best" block.
-     *
-     * You should only want to set this to `false` if you are doing something that is time sensitive and
-     * can handle changes being reverted at some point in the near future (e.g. real-time gaming or messaging).
-     *
-     * Defaults to `true`.
-     */
-    finalized?: boolean;
-
-    /**
-     * Optionally trigger only on updates/inserts, or only deletions, of the storage
-     * item being watched. If not specified, all changes will trigger.
-     */
-    changeType?: "upsert" | "deleted";
-
-    constructor(
-        options: { finalized?: boolean; changeType?: "upsert" | "deleted" } = {}
-    ) {
-        this.finalized = options.finalized;
-        this.changeType = options.changeType;
-    }
-}
 
 /**
  * ## LeafFunction
@@ -90,7 +61,7 @@ export class StorageOptions {
  * @template WLs  The type of `WatchLeaf`s this function returns
  * @template Arg The type of arguments this function takes
  */
-type LeafFunction<
+export type LeafFunction<
     WLs extends readonly WatchLeaf[] = WatchLeaf[],
     Arg extends readonly any[] = any[]
 > = (...args: Arg) => WLs;
@@ -114,13 +85,16 @@ export type FuncTree<
         ? // Storage leaf
           LeafFunction<
               [WatchLeaf<CId, `${Pth}.${K & string}`, PartialArgs<Keys>>],
-              [...PartialArgs<Keys>, options?: Expand<StorageOptions>]
+              [
+                  ...PartialArgs<Keys>,
+                  options?: Expand<ROOTS.storage.LeafOptions>
+              ]
           >
         : T[K] extends PlainDescriptor<any>
         ? // Event leaf
           LeafFunction<
               [WatchLeaf<CId, `${Pth}.${K & string}`, []>],
-              [options?: Expand<EventOptions>]
+              [options?: Expand<ROOTS.event.LeafOptions>]
           >
         : // Subtree node
           FuncTree<
@@ -130,42 +104,6 @@ export type FuncTree<
               TreeExtension
           >;
 } & TreeExtension;
-
-/**
- * Utility type to extract all WatchLeaf types within a tree structure
- */
-type ExtractLeaves<T extends FuncTree | LeafFunction> = T extends LeafFunction
-    ? ReturnType<T>
-    : T[keyof T] extends FuncTree | LeafFunction
-    ? ExtractLeaves<T[keyof T]>
-    : never;
-
-export const EventTreeExtension = {
-    /**
-     * Watch all *observables* under this event tree node
-     *
-     * @param options - Options applied to all leaves in this tree
-     */
-    all<const Self extends FuncTree, O extends Expand<EventOptions>>(
-        this: Self,
-        options?: O
-    ): ExtractLeaves<Self> {
-        const leaves: WatchLeaf[] = [];
-
-        for (const key of Object.keys(this as Record<string, unknown>)) {
-            if (key in EventTreeExtension) continue;
-
-            const subTree = (this as any)[key];
-
-            if (typeof subTree === "function") {
-                leaves.push(subTree(options));
-            } else {
-                leaves.push(...subTree.all(options));
-            }
-        }
-        return leaves.flat() as ExtractLeaves<Self>;
-    },
-};
 
 /**
  * Builds a `FuncTree` for a given chain's `descriptors` object.
@@ -206,16 +144,12 @@ async function buildFuncTree(
                  * edge case for the sake of nice API design.
                  */
                 typeof lastArg === "object" &&
-                (Object.keys(lastArg).every((key) =>
-                    Object.keys(new StorageOptions()).find(
-                        (possibleKey) => key == possibleKey
-                    )
-                ) ||
-                    Object.keys(lastArg).every((key) =>
-                        Object.keys(new EventOptions()).find(
-                            (possibleKey) => key == possibleKey
-                        )
-                    ))
+                Object.values(ROOTS).some((root) => {
+                    const optionKeys = Object.keys(new root.LeafOptions());
+                    return Object.keys(lastArg).every((key) =>
+                        optionKeys.includes(key)
+                    );
+                })
             ) {
                 options = lastArg;
                 actualArgs = args.slice(0, -1);
@@ -238,40 +172,13 @@ async function buildFuncTree(
     }
 
     /**
-     * Handle {@link EventTreeExtension}
+     * Handle {@link ROOTS.event.TreeExtension}
      */
     if (prefix.startsWith("event")) {
-        Object.setPrototypeOf(out, EventTreeExtension);
+        Object.setPrototypeOf(out, ROOTS.event.TreeExtension);
     }
     return out;
 }
-
-/**
- * An `event` FuncTree for a blockchain given by `V`.
- */
-type ObservablesEventMap<V extends VirtualChainId> = FuncTree<
-    (typeof D)[FromVirtual<V>]["descriptors"]["pallets"]["__event"],
-    `event`,
-    FromVirtual<V>,
-    typeof EventTreeExtension
->;
-
-/**
- * A `storage` FuncTree for a blockchain given by `V`.
- */
-type ObservablesStorageMap<V extends VirtualChainId> = FuncTree<
-    (typeof D)[FromVirtual<V>]["descriptors"]["pallets"]["__storage"],
-    `storage`,
-    FromVirtual<V>
->;
-
-/**
- * Type of {@link Observables}.
- */
-type ObservablesMap = {
-    event: { [V in VirtualChainId]: ObservablesEventMap<V> };
-    storage: { [V in VirtualChainId]: ObservablesStorageMap<V> };
-};
 
 /**
  * ## Observables
@@ -280,7 +187,10 @@ type ObservablesMap = {
  *
  * TODO! docs here
  */
-export const Observables: Readonly<ObservablesMap> = await (async () => {
+export const Observables: Readonly<{
+    event: { [V in VirtualChainId]: ROOTS.event.Tree<V> };
+    storage: { [V in VirtualChainId]: ROOTS.storage.Tree<V> };
+}> = await (async () => {
     // Build event tree
     const eventEntries = await Promise.all(
         knownChains.map(async (id) => {
@@ -290,13 +200,13 @@ export const Observables: Readonly<ObservablesMap> = await (async () => {
                 id,
                 `event`,
                 d.events
-            )) as unknown as ObservablesEventMap<typeof vId>;
+            )) as ROOTS.event.Tree<typeof vId>;
 
             return [vId, pm] as const;
         })
     );
     const eventObj = Object.fromEntries(eventEntries) as {
-        [V in VirtualChainId]: ObservablesEventMap<V>;
+        [V in VirtualChainId]: ROOTS.event.Tree<V>;
     };
 
     // Build query tree
@@ -308,13 +218,13 @@ export const Observables: Readonly<ObservablesMap> = await (async () => {
                 id,
                 `storage`,
                 d.storage
-            )) as ObservablesStorageMap<typeof vId>;
+            )) as ROOTS.storage.Tree<typeof vId>;
 
             return [vId, pm] as const;
         })
     );
     const queryObj = Object.fromEntries(queryEntries) as {
-        [V in VirtualChainId]: ObservablesStorageMap<V>;
+        [V in VirtualChainId]: ROOTS.storage.Tree<V>;
     };
 
     return { event: eventObj, storage: queryObj } as const;
@@ -327,16 +237,16 @@ if (import.meta.vitest) {
     describe("WatchLeaf components & helpers", () => {
         describe("WatchLeaf options", () => {
             test("Make some StorageOptions", () => {
-                const options = new StorageOptions({
+                const options = new ROOTS.storage.LeafOptions({
                     finalized: true,
                 });
                 expect(options.finalized).toBe(true);
                 expect(options.changeType).toBeUndefined();
             });
             test("Make some EventOptions", () => {
-                const options = new EventOptions({});
+                const options = new ROOTS.event.LeafOptions({});
                 expect(options).toEqual({});
-                expect(options).toBeInstanceOf(EventOptions);
+                expect(options).toBeInstanceOf(ROOTS.event.LeafOptions);
             });
         });
 
