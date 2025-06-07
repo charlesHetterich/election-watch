@@ -13,6 +13,6 @@ export type ContextualAPIs<Ids extends ChainId> = {
 /**
  * Provides system context to lambda apps
  */
-export class Context<Ids extends ChainId> {
+export class Context<Ids extends ChainId = ChainId> {
     constructor(public apis: ContextualAPIs<Ids>) {}
 }

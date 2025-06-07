@@ -10,27 +10,10 @@ import {
     TAppModule,
     TRoute,
     ChainId,
+    ROOTS,
 } from "@lambdas/app-support";
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
-
-type WatchEntriesPayload = {
-    block: any;
-    deltas: null | {
-        deleted: Array<{
-            args: any;
-            value: NonNullable<any>;
-        }>;
-        upserted: Array<{
-            args: any;
-            value: NonNullable<any>;
-        }>;
-    };
-    entries: Array<{
-        args: any;
-        value: NonNullable<any>;
-    }>;
-};
 
 /**
  * Creates a route handler from a route and an API
@@ -47,6 +30,7 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
     ) => [WatchLeaf, Subscription])[] = [];
     for (const leaf of route.watching) {
         const path_arr = leaf.path.split(".");
+
         // Start at the top this chain's API/Codec, and then
         // traverse properties to the desired observable value
         let watchable: any = await manager.getAPI(leaf.chain);
@@ -61,83 +45,26 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
             case WatchType.EVENT:
                 leafHandlers.push((context: Context<ChainId>) => [
                     leaf,
-                    watchable.watch().subscribe(async (data: any) => {
-                        const payload = {
-                            ...data.payload,
-                            __meta: {
-                                chain: leaf.chain,
-                                path: leaf.path,
-                            },
-                        };
-                        if (await route.trigger(payload, context)) {
-                            route.lambda(payload, context);
-                        }
-                    }) as Subscription,
+                    ROOTS.event.handleLeaf(
+                        watchable,
+                        route.trigger,
+                        route.lambda,
+                        leaf
+                    )(context),
                 ]);
                 break;
             case WatchType.STORAGE:
                 const nArgs: number = codec.args.inner.length;
-                leafHandlers.push((context: Context<ChainId>) => {
-                    // Decide to use `watchValue` or `watchEntries` based on available args
-                    if (leaf.args.length < nArgs) {
-                        return [
-                            leaf,
-                            watchable
-                                .watchEntries(
-                                    ...leaf.args,
-                                    leaf.options.finalized
-                                        ? undefined
-                                        : { at: "best" }
-                                )
-                                .subscribe(
-                                    async (payload: WatchEntriesPayload) => {
-                                        const refinedPayloads =
-                                            payload.entries.map((p) => {
-                                                return {
-                                                    key: p.args,
-                                                    value: p.value,
-                                                    __meta: {
-                                                        chain: leaf.chain,
-                                                        path: leaf.path,
-                                                    },
-                                                };
-                                            }) as any[];
-                                        for (const p of refinedPayloads) {
-                                            if (
-                                                await route.trigger(p, context)
-                                            ) {
-                                                route.lambda(p, context);
-                                            }
-                                        }
-                                    }
-                                ),
-                        ];
-                    } else {
-                        return [
-                            leaf,
-                            watchable
-                                .watchValue(
-                                    ...leaf.args,
-                                    leaf.options.finalized
-                                        ? "finalized"
-                                        : "best"
-                                )
-                                .subscribe(async (payload: any) => {
-                                    const p = {
-                                        key: leaf.args,
-                                        value: payload,
-                                        __meta: {
-                                            chain: leaf.chain,
-                                            path: leaf.path,
-                                        },
-                                    } as any;
-                                    if (await route.trigger(p, context)) {
-                                        route.lambda(p, context);
-                                    }
-                                }),
-                        ];
-                    }
-                });
+                leafHandlers.push((context: Context<ChainId>) => [
+                    leaf,
+                    ROOTS.storage.handleLeaf(
+                        watchable,
+                        route.trigger,
+                        route.lambda,
+                        leaf,
+                        nArgs
+                    )(context),
+                ]);
                 break;
             default:
                 throw new Error(

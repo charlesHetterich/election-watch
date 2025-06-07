@@ -1,8 +1,12 @@
+import { Observable, Subscription } from "rxjs";
 import * as D from "@polkadot-api/descriptors";
 
 import { Expand } from "../helpers";
-import { FromVirtual, VirtualChainId } from "../known-chains";
+import { ChainId, FromVirtual, VirtualChainId } from "../known-chains";
 import { FuncTree, LeafFunction, WatchLeaf } from ".";
+import { Context } from "@lambdas/app-support/context";
+import { processPayload } from "../payload";
+import { TRoute } from "../apps";
 
 export const name = "event";
 
@@ -63,3 +67,25 @@ export type Tree<V extends VirtualChainId = VirtualChainId> = FuncTree<
     FromVirtual<V>,
     typeof TreeExtension
 >;
+
+export function handleLeaf<WL extends WatchLeaf, T>(
+    watchable: {
+        watch: () => Observable<T>;
+    },
+    trigger: TRoute<[WL]>["trigger"],
+    lambda: TRoute<[WL]>["lambda"],
+    leaf: WL
+): (context: Context<ChainId>) => Subscription {
+    return (context) => {
+        return watchable.watch().subscribe((data: any) => {
+            const payload = {
+                ...data.payload,
+                __meta: {
+                    chain: leaf.chain,
+                    path: leaf.path,
+                },
+            };
+            processPayload(payload, context, trigger, lambda);
+        });
+    };
+}

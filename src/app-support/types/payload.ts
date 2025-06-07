@@ -4,6 +4,8 @@ import { PlainDescriptor, StorageDescriptor } from "polkadot-api";
 import { Split } from "./helpers";
 import { WatchLeaf } from "./observables";
 import { ROOTS } from "../types/observables";
+import { Context } from "../context";
+import { TRoute } from "./apps";
 
 /**
  * Extract specific type inside of a descriptor tree, given by a list of type strings
@@ -50,7 +52,7 @@ export type PossiblePayload<WLs extends readonly WatchLeaf[]> = WLs extends [
           ...infer Rest extends readonly WatchLeaf[]
       ]
     ? Payload<First> | PossiblePayload<Rest>
-    : never;
+    : any;
 
 /**
  * Reveals hidden properties on a payload
@@ -81,6 +83,17 @@ export function narrowPayload<T extends WatchLeaf>(
         _payload.__meta.chain === watchLeaf.chain &&
         _payload.__meta.path === watchLeaf.path
     );
+}
+
+export async function processPayload<T extends WatchLeaf[]>(
+    payload: PossiblePayload<T>,
+    context: Context,
+    trigger: TRoute<T>["trigger"],
+    lambda: TRoute<T>["lambda"]
+) {
+    if (await trigger(payload, context)) {
+        lambda(payload, context);
+    }
 }
 
 if (import.meta.vitest) {

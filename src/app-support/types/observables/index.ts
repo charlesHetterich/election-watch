@@ -10,9 +10,23 @@ import {
 } from "../known-chains";
 import { TRoute } from "../apps";
 
-// Roots
 import * as EVENT from "./event";
 import * as STORAGE from "./storage";
+/**
+ * Roots
+ *
+ * TODO! determine generic *observable root* structure. For now we only
+ *       have block-chain specific roots, but this will change down the line.
+ *
+ * Currently form is {
+ *     name                 string;
+ *     LeafOptions          type def
+ *     PayloadStructure     type def
+ *     Tree                 type def
+ *     handleLeaf           function
+ *     TreeExtension?       object
+ * }
+ */
 export namespace ROOTS {
     export import event = EVENT;
     export import storage = STORAGE;

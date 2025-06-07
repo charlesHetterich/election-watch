@@ -1,8 +1,12 @@
+import { Subscription, Observable } from "rxjs";
 import * as D from "@polkadot-api/descriptors";
 
 import { Expand } from "../helpers";
-import { FromVirtual, VirtualChainId } from "../known-chains";
-import { FuncTree } from ".";
+import { ChainId, FromVirtual, VirtualChainId } from "../known-chains";
+import { FuncTree, WatchLeaf } from ".";
+import { Context } from "@lambdas/app-support/context";
+import { processPayload } from "../payload";
+import { TRoute } from "../apps";
 
 export const name = "storage";
 
@@ -47,6 +51,31 @@ export type PayloadStructure<Key, Value> = Expand<{
 }>;
 
 /**
+ * TODO! Is there a way we can reference this inside of PAPI?
+ *
+ * Currently, its innaccessible, so we just redefine it ourselves, ripped directly from the
+ * [watchEntries](https://github.com/polkadot-api/polkadot-api/blob/2634134b5f9ec02a44662c4ef92b15b1b5f1f509/packages/client/src/storage.ts#L229)
+ * function
+ */
+type WatchEntriesPayload = {
+    block: any;
+    deltas: null | {
+        deleted: Array<{
+            args: any;
+            value: NonNullable<any>;
+        }>;
+        upserted: Array<{
+            args: any;
+            value: NonNullable<any>;
+        }>;
+    };
+    entries: Array<{
+        args: any;
+        value: NonNullable<any>;
+    }>;
+};
+
+/**
  * A `storage` FuncTree for a blockchain given by `V`.
  */
 export type Tree<V extends VirtualChainId = VirtualChainId> = FuncTree<
@@ -54,3 +83,52 @@ export type Tree<V extends VirtualChainId = VirtualChainId> = FuncTree<
     `storage`,
     FromVirtual<V>
 >;
+
+/**
+ * See PAPI [Storage Queries](https://papi.how/typed/queries) for more understanding
+ * of how we handle `.watchEntries` and `.watchValue`.
+ */
+export function handleLeaf<WL extends WatchLeaf, T extends WatchEntriesPayload>(
+    watchable: {
+        watchEntries: (...args: any[]) => Observable<T>;
+        watchValue: (...args: any[]) => Observable<T>;
+    },
+    trigger: TRoute<[WL]>["trigger"],
+    lambda: TRoute<[WL]>["lambda"],
+    leaf: WL,
+    nArgs: number
+): (context: Context<ChainId>) => Subscription {
+    return (context) =>
+        (leaf.args.length < nArgs
+            ? watchable.watchEntries(
+                  ...leaf.args,
+                  leaf.options.finalized ? undefined : { at: "best" }
+              )
+            : watchable.watchValue(
+                  ...leaf.args,
+                  leaf.options.finalized ? "finalized" : "best"
+              )
+        ).subscribe((payload: WatchEntriesPayload | any) => {
+            // Normalize payload structures from `watchEntries` and `watchValue`
+            let _payload: { args: any; value: any }[];
+            if (payload.entries) {
+                _payload = payload.entries;
+            } else {
+                _payload = [{ args: leaf.args, value: payload }];
+            }
+
+            const refinedPayloads = _payload.map((p) => {
+                return {
+                    key: p.args,
+                    value: p.value,
+                    __meta: {
+                        chain: leaf.chain,
+                        path: leaf.path,
+                    },
+                };
+            });
+            for (const p of refinedPayloads) {
+                processPayload(p, context, trigger, lambda);
+            }
+        });
+}
