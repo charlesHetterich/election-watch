@@ -65,28 +65,21 @@ if (import.meta.vitest) {
         >().toEqualTypeOf<never>();
 
         const ev_obs = Observables.event.polkadot.Balances.Transfer();
-        expectTypeOf<Payload<(typeof ev_obs)[number]>>().toEqualTypeOf<{
-            from: SS58String;
-            to: SS58String;
-            amount: bigint;
-        }>();
+        expectTypeOf<Payload<(typeof ev_obs)[number]>>().toEqualTypeOf<
+            D.PolkadotEvents["Balances"]["Transfer"]
+        >();
 
         const st_obs =
             Observables.storage.polkadotAssetHub.Balances.Account("some-id");
         expectTypeOf<Payload<(typeof st_obs)[number]>>().toEqualTypeOf<{
-            key: [SS58String];
-            value: {
-                free: bigint;
-                reserved: bigint;
-                frozen: bigint;
-                flags: bigint;
-            };
+            key: D.Polkadot_asset_hubQueries["Balances"]["Account"]["KeyArgs"];
+            value: D.Polkadot_asset_hubQueries["Balances"]["Account"]["Value"];
         }>();
 
         const st2_obs = Observables.storage.polkadotAssetHub.System.Number();
         expectTypeOf<Payload<(typeof st2_obs)[number]>>().toEqualTypeOf<{
-            key: [];
-            value: number;
+            key: D.Polkadot_asset_hubQueries["System"]["Number"]["KeyArgs"];
+            value: D.Polkadot_asset_hubQueries["System"]["Number"]["Value"];
         }>();
     });
 
@@ -94,15 +87,15 @@ if (import.meta.vitest) {
         App("test", {
             watching: Observables.event.polkadot.Bounties.BountyProposed(),
             trigger: (payload, _) => {
-                expectTypeOf<typeof payload>().toEqualTypeOf<{
-                    index: number;
-                }>();
+                expectTypeOf<typeof payload>().toEqualTypeOf<
+                    D.PolkadotEvents["Bounties"]["BountyProposed"]
+                >();
                 return true;
             },
             lambda: (payload, _) => {
-                expectTypeOf<typeof payload>().toEqualTypeOf<{
-                    index: number;
-                }>();
+                expectTypeOf<typeof payload>().toEqualTypeOf<
+                    D.PolkadotEvents["Bounties"]["BountyProposed"]
+                >();
             },
         });
     });
