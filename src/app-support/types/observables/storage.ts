@@ -100,10 +100,9 @@ export function handleLeaf<WL extends WatchLeaf, T extends WatchEntriesPayload>(
 ): (context: Context<ChainId>) => Subscription {
     return (context) =>
         (leaf.args.length < nArgs
-            ? watchable.watchEntries(
-                  ...leaf.args,
-                  leaf.options.finalized ? undefined : { at: "best" }
-              )
+            ? leaf.options.finalized == false
+                ? watchable.watchEntries(...leaf.args, { at: "best" })
+                : watchable.watchEntries(...leaf.args)
             : watchable.watchValue(
                   ...leaf.args,
                   leaf.options.finalized ? "finalized" : "best"
