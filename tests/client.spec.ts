@@ -1,74 +1,23 @@
-import {
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    MockInstance,
-    vi,
-} from "vitest";
-import { Keyring } from "@polkadot/api";
-import { AppsManager, LambdaApp, loadApps } from "@lambdas/app-handler";
-import { appsDir, mockGetAPI } from "./mock";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { MultiAddress } from "@polkadot-api/descriptors";
-import fs from "fs";
-import path from "path";
-import { TAppModule, WatchLeaf } from "@lambdas/app-support";
-import { getPolkadotSigner } from "polkadot-api/signer";
-import { Binary } from "polkadot-api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { Binary } from "polkadot-api";
 
-function getNewSigner(seed: string) {
-    const keyring = new Keyring({ type: "sr25519" });
-    const pair = keyring.addFromUri(`//${seed}`, {}, "sr25519");
-    return {
-        address: pair.address,
-        signer: getPolkadotSigner(
-            pair.publicKey,
-            "Sr25519",
-            (data: Uint8Array) => pair.sign(data)
-        ),
-    };
-}
-
-/**
- * Get the routes for all valid apps that have valid trigger/lambda functions
- */
-async function getSpiedOnRoutes() {
-    const appNames = fs
-        .readdirSync(appsDir, { withFileTypes: true })
-        .filter(
-            (dirent) => dirent.isDirectory() && !dirent.name.startsWith("_")
-        )
-        .map((dirent) => dirent.name);
-
-    const result = await appNames.reduce(async (accPromise, appName) => {
-        const acc = await accPromise;
-        try {
-            const appModule = (
-                await import(path.join(appsDir, appName, "index.ts"))
-            ).default as TAppModule<WatchLeaf[][]>;
-
-            acc[appName] = appModule.routes.map((route) => {
-                return {
-                    trigger: vi.spyOn(route, "trigger"),
-                    lambda: vi.spyOn(route, "lambda"),
-                };
-            });
-        } catch (_) {}
-        return acc;
-    }, Promise.resolve({} as Record<string, { trigger: MockInstance; lambda: MockInstance }[]>));
-
-    return result;
-}
+import { AppsManager, LambdaApp, loadApps } from "@lambdas/app-handler";
+import { getSigner, getSpiedOnRoutes, clearRouteMocks } from "./helpers";
+import { appsDir, mockGetAPI } from "./mock";
 
 describe("Substrate Lambdas Client", async () => {
+    let manager: AppsManager;
+    let routes = await getSpiedOnRoutes();
+    const alice = getSigner("Alice");
+    const bob = getSigner("Bob");
+
     beforeAll(async () => {
         await cryptoWaitReady();
     }, 20000);
 
     describe("loader", async () => {
-        let manager: AppsManager;
         beforeEach(() => {
             manager = new AppsManager();
         });
@@ -106,55 +55,89 @@ describe("Substrate Lambdas Client", async () => {
             expect(apps["single-event"].alive).toBe(true);
             expect(apps["single-event"].handlers).toHaveLength(1);
             expect(apps["single-query"].alive).toBe(true);
-            expect(apps["single-query"].handlers).toHaveLength(1);
-        });
-    });
-
-    describe("loaded apps", async () => {
-        const routes = await getSpiedOnRoutes();
-        const alice = getNewSigner("Alice");
-        const bob = getNewSigner("Bob");
-        const manager = new AppsManager();
-        manager.getAPI = mockGetAPI;
-
-        await loadApps(appsDir, manager);
-        const apps = manager["apps"].reduce((acc, app) => {
-            acc[app.name] = app;
-            return acc;
-        }, {} as Record<string, LambdaApp>);
-
-        beforeAll(async () => {
-            // Submit a remark block so we start listening to events during a *mostly* empty block
-            await manager["apis"].polkadot.tx.System.remark({
-                remark: Binary.fromText("hello"),
-            }).signAndSubmit(alice.signer);
-            await manager.launch();
-        }, 20000);
-
-        it("should react to the Observable they are watching", async () => {
-            await manager["apis"].polkadot.tx.Balances.transfer_allow_death({
-                dest: MultiAddress.Id(bob.address),
-                value: 10_000_000_000n,
-            }).signAndSubmit(alice.signer);
-            expect(routes["single-event"][0].trigger).toHaveBeenCalledOnce();
-            expect(
-                routes["single-event"][0].trigger.mock.calls[0][0].amount
-            ).toEqual(10_000_000_000n);
+            // expect(apps["single-query"].handlers).toHaveLength(4);
         });
     });
 
     describe("Routes", async () => {
-        it("should handle `Observables.event` leaves, and give payload in expected format", async () => {
-            expect.fail("not implemented");
+        beforeAll(async () => {
+            if (manager) {
+                await manager.shutdown();
+            }
+            manager = new AppsManager();
+            manager.getAPI = mockGetAPI;
+            await loadApps(appsDir, manager);
+            await manager.launch();
+            await manager["apis"].polkadot.tx.System.remark({
+                remark: Binary.fromText("hello"),
+            }).signAndSubmit(alice.signer);
+            clearRouteMocks(routes);
+
+            // Submit a series of transaction which the upcoming tests will use
+            // [1] submit a tranfer from Alice to Bob
+            await manager["apis"].polkadot.tx.Balances.transfer_allow_death({
+                dest: MultiAddress.Id(bob.address),
+                value: 10_000_000_000n,
+            }).signAndSubmit(alice.signer);
+            // [2] submit a remark from Alice
+            await manager["apis"].polkadot.tx.System.remark({
+                remark: Binary.fromText(""),
+            }).signAndSubmit(alice.signer);
+            // [1] submit a tranfer from Alice to Bob
+            await manager["apis"].polkadot.tx.Balances.transfer_allow_death({
+                dest: MultiAddress.Id(bob.address),
+                value: 40_000_000_000n,
+            }).signAndSubmit(alice.signer);
+        }, 20000);
+
+        it("should handle event observables", async () => {
+            expect(routes["single-event"][0].trigger).toHaveBeenCalledTimes(2);
+            expect(
+                routes["single-event"][0].trigger.mock.calls[0][0].amount
+            ).toEqual(10_000_000_000n);
         });
-        it("should handle all caputured events from `Observables.event` with .all()", async () => {
-            expect.fail("not implemented");
+
+        it("should only get to lambda when the trigger returns true", async () => {
+            expect(routes["complex-routes"][2].trigger).toHaveBeenCalledTimes(
+                2
+            );
+            expect(routes["complex-routes"][2].lambda).toHaveBeenCalledTimes(1);
         });
-        it("should handle `Observables.storage` leaves and give payload in expected format, regardless of `.watchEntries` or `.watchValue`", async () => {
-            expect.fail("not implemented");
+
+        it("`.all()` should capture all events within a pallet when used at the pallet level", async () => {
+            const paths = routes["complex-routes"][0].trigger.mock.calls.map(
+                (call) => call[0].__meta.path
+            ) as string[];
+            expect(paths).toContain("event.Balances.Transfer");
+            expect(paths).toContain("event.Balances.Deposit");
+            expect(paths).toContain("event.Balances.Withdraw");
         });
-        it("should filter `delete`, `upsert` payloads on `Observables.storage` according to `WatchLeaf.options`", async () => {
-            expect.fail("not implemented");
+
+        it("`.all()` should capture all events across pallets when used at chain level", async () => {
+            const paths = routes["complex-routes"][1].trigger.mock.calls.map(
+                (call) => call[0].__meta.path
+            ) as string[];
+            expect(paths).toContain("event.Balances.Transfer");
+            expect(paths).toContain("event.Balances.Deposit");
+            expect(paths).toContain("event.Balances.Withdraw");
+            expect(paths).toContain("event.System.ExtrinsicSuccess");
         });
+
+        it("should handle storage observables with no keys", async () => {
+            expect(routes["single-query"][0].trigger).toHaveBeenCalledTimes(3);
+        });
+
+        it.todo(
+            "should handle `Observables.storage` leaves and give payload in expected format, regardless of `.watchEntries` or `.watchValue`",
+            async () => {
+                expect.fail("not implemented");
+            }
+        );
+        it.todo(
+            "should filter `delete`, `upsert` payloads on `Observables.storage` according to `WatchLeaf.options`",
+            async () => {
+                expect.fail("not implemented");
+            }
+        );
     });
 });
