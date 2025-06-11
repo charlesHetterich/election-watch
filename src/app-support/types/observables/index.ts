@@ -456,7 +456,7 @@ if (import.meta.vitest) {
                         Observables.storage.polkadotAssetHub.PolkadotXcm.SupportedVersion(
                             10,
                             {
-                                type: "V2",
+                                type: "V4",
                                 value: {
                                     parents: 43,
                                     interior: {
@@ -473,7 +473,7 @@ if (import.meta.vitest) {
                             args: [
                                 10,
                                 {
-                                    type: "V2",
+                                    type: "V4",
                                     value: {
                                         parents: 43,
                                         interior: {
