@@ -1,5 +1,6 @@
 import chalk from "chalk";
-import { start } from "polkadot-api/smoldot";
+import { Chain, Client, start } from "polkadot-api/smoldot";
+import { getSmProvider } from "polkadot-api/sm-provider";
 import { createClient, getTypedCodecs, TypedApi } from "polkadot-api";
 import * as D from "@polkadot-api/descriptors";
 import * as chains from "polkadot-api/chains";
@@ -10,12 +11,10 @@ import {
     ContextualAPIs,
     RelayId,
     toVirtual,
+    getRelayId,
+    isRelay,
 } from "@lambdas/app-support";
 import { LambdaApp } from "./app";
-import { Chain, Client } from "polkadot-api/smoldot";
-import { getSmProvider } from "polkadot-api/sm-provider";
-
-import { getRelayId, isRelay } from "./known-chains";
 
 /**
  * Handles overarching app logic & management

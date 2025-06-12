@@ -88,6 +88,24 @@ export type ToApi<C extends ChainId> = {
         : never;
 }[C];
 
+/**
+ * Check if `chainId` is the Id of a relay chain
+ */
+export function isRelay(chainId: ChainId): boolean {
+    return chainId in knownRelays;
+}
+
+/**
+ * Get the relay chainId for a given chain ID
+ */
+export function getRelayId(chainId: ChainId): RelayId {
+    const relayId = knownRelays.find((relay) => chainId.startsWith(relay));
+    if (!relayId) {
+        throw new Error(`No relay found for chainID: ${chainId}`);
+    }
+    return relayId;
+}
+
 if (import.meta.vitest) {
     /**
      * For the tests in this file we assume the descriptors
