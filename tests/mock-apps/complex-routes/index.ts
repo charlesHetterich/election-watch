@@ -19,9 +19,7 @@ export default App(
     {
         watching: Observables.event.polkadot.all(),
         trigger: (_, c) => true,
-        lambda: async (_, c) => {
-            // console.log(_);
-        },
+        lambda: async (_, c) => {},
     },
 
     /**

@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import { start } from "polkadot-api/smoldot";
-import { createClient, TypedApi } from "polkadot-api";
+import { createClient, getTypedCodecs, TypedApi } from "polkadot-api";
 import * as D from "@polkadot-api/descriptors";
 import * as chains from "polkadot-api/chains";
 
@@ -8,6 +8,7 @@ import {
     ChainId,
     Context,
     ContextualAPIs,
+    RelayId,
     toVirtual,
 } from "@lambdas/app-support";
 import { LambdaApp } from "./app";
@@ -26,7 +27,8 @@ import { getRelayId, isRelay } from "./known-chains";
  */
 export class AppsManager {
     private lightClient: Client;
-    private relayChains: Record<string, Chain> = {};
+    private relayChains = {} as Record<RelayId, Chain>;
+    private codecs = {} as Record<ChainId, any>;
     public apis = {} as Record<ChainId, TypedApi<(typeof D)[ChainId]>>;
     public apps: LambdaApp[] = [];
 
@@ -37,6 +39,13 @@ export class AppsManager {
     public async shutdown() {
         this.apps.forEach((app) => app.shutdown());
         await this.lightClient.terminate();
+    }
+
+    public async getCodec(chainId: ChainId) {
+        if (!this.codecs[chainId]) {
+            this.codecs[chainId] = await getTypedCodecs(D[chainId]);
+        }
+        return this.codecs[chainId];
     }
 
     /**

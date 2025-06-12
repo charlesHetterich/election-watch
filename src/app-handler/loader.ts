@@ -1,15 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { Subscription } from "rxjs";
-import * as D from "@polkadot-api/descriptors";
-import { getTypedCodecs } from "polkadot-api";
 
 import {
     Context,
     WatchLeaf,
     TAppModule,
     TRoute,
-    ChainId,
     ROOTS,
 } from "@lambdas/app-support";
 import { LambdaApp, RouteHandler, WatchType } from "./app";
@@ -17,24 +14,19 @@ import { AppsManager } from "./manager";
 
 /**
  * Creates a route handler from a route and an API
- *
- * TODO! refactor & better types. whole thing needs
- *       to be validated w/ integration tests next.
  */
 async function handlerFromRoute<WLs extends WatchLeaf[]>(
     route: TRoute<WLs>,
     manager: AppsManager
 ): Promise<RouteHandler> {
-    let leafHandlers: ((
-        context: Context<ChainId>
-    ) => [WatchLeaf, Subscription])[] = [];
+    let leafHandlers: ((context: Context) => [WatchLeaf, Subscription])[] = [];
     for (const leaf of route.watching) {
         const path_arr = leaf.path.split(".");
 
         // Start at the top this chain's API/Codec, and then
         // traverse properties to the desired observable value
         let watchable: any = await manager.getAPI(leaf.chain);
-        let codec: any = await getTypedCodecs(D[leaf.chain]);
+        let codec: any = await manager.getCodec(leaf.chain);
         for (const pth of path_arr) {
             watchable = watchable[pth == WatchType.STORAGE ? "query" : pth];
             codec = codec[pth == WatchType.STORAGE ? "query" : pth];
@@ -43,7 +35,7 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
         // Configure route handler
         switch (path_arr[0]) {
             case WatchType.EVENT:
-                leafHandlers.push((context: Context<ChainId>) => [
+                leafHandlers.push((context: Context) => [
                     leaf,
                     ROOTS.event.handleLeaf(
                         watchable,
@@ -55,7 +47,7 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
                 break;
             case WatchType.STORAGE:
                 const nArgs: number = codec.args.inner.length;
-                leafHandlers.push((context: Context<ChainId>) => [
+                leafHandlers.push((context: Context) => [
                     leaf,
                     ROOTS.storage.handleLeaf(
                         watchable,
@@ -75,7 +67,7 @@ async function handlerFromRoute<WLs extends WatchLeaf[]>(
 
     // Collect all leaf handlers into a single
     // "batch" handler that calls all leaf handlers
-    return (context: Context<ChainId>) =>
+    return (context: Context) =>
         leafHandlers.map((handler) => handler(context));
 }
 
@@ -142,8 +134,42 @@ export async function loadApps(appsDir: string, manager: AppsManager) {
 }
 
 if (import.meta.vitest) {
-    const { test, expect, describe } = import.meta.vitest;
-    test("TODO! Implement tests", () => {
-        expect("").toEqual("todo!");
+    const { test, expect } = import.meta.vitest;
+    const appsDir = "tests/mock-apps";
+
+    test("should throw an error on non-existed appsDir", async () => {
+        await expect(() =>
+            loadApps("invalid-path", new AppsManager())
+        ).rejects.toBeDefined();
+    });
+
+    test("should find apps in valid `appsDir` correctly", async () => {
+        const manager = new AppsManager();
+        await loadApps(appsDir, manager);
+        expect(manager["apps"].map((app) => app.name)).toContain("no-index");
+    });
+
+    test("should load all valid/invalid apps correctly", async () => {
+        const manager = new AppsManager();
+        // Load all apps
+        await loadApps(appsDir, manager);
+        const apps = manager["apps"].reduce((acc, app) => {
+            acc[app.name] = app;
+            return acc;
+        }, {} as Record<string, LambdaApp>);
+
+        // Check simple invalid apps
+        expect(apps["no-index"].name).toEqual("no-index");
+        expect(apps["no-index"].alive).toBe(false);
+        expect(apps["no-index"].handlers).toHaveLength(0);
+        expect(apps["invalid-module"].alive).toBe(false);
+        expect(apps["invalid-module"].handlers).toHaveLength(0);
+
+        // Check simple valid apps
+        expect(apps["single-event"].name).toEqual("single-event");
+        expect(apps["single-event"].alive).toBe(true);
+        expect(apps["single-event"].handlers).toHaveLength(1);
+        expect(apps["single-query"].alive).toBe(true);
+        // expect(apps["single-query"].handlers).toHaveLength(4);
     });
 }

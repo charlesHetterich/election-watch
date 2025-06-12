@@ -1,9 +1,8 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { Binary } from "polkadot-api";
-
-import { AppsManager, LambdaApp, loadApps } from "@lambdas/app-handler";
+import { AppsManager, loadApps } from "@lambdas/app-handler";
 import { getSigner, getSpiedOnRoutes, clearRouteMocks } from "./helpers";
 import { appsDir, mockGetAPI } from "./mock";
 
@@ -16,48 +15,6 @@ describe("Substrate Lambdas Client", async () => {
     beforeAll(async () => {
         await cryptoWaitReady();
     }, 20000);
-
-    describe("loader", async () => {
-        beforeEach(() => {
-            manager = new AppsManager();
-        });
-
-        it("should throw an error on non-existed appsDir", async () => {
-            await expect(() =>
-                loadApps("invalid-path", manager)
-            ).rejects.toBeDefined();
-        });
-
-        it("should find apps in valid `appsDir` correctly", async () => {
-            await loadApps(appsDir, manager);
-            expect(manager["apps"].map((app) => app.name)).toContain(
-                "no-index"
-            );
-        });
-
-        it("should load all valid/invalid apps correctly", async () => {
-            // Load all apps
-            await loadApps(appsDir, manager);
-            const apps = manager["apps"].reduce((acc, app) => {
-                acc[app.name] = app;
-                return acc;
-            }, {} as Record<string, LambdaApp>);
-
-            // Check simple invalid apps
-            expect(apps["no-index"].name).toEqual("no-index");
-            expect(apps["no-index"].alive).toBe(false);
-            expect(apps["no-index"].handlers).toHaveLength(0);
-            expect(apps["invalid-module"].alive).toBe(false);
-            expect(apps["invalid-module"].handlers).toHaveLength(0);
-
-            // Check simple valid apps
-            expect(apps["single-event"].name).toEqual("single-event");
-            expect(apps["single-event"].alive).toBe(true);
-            expect(apps["single-event"].handlers).toHaveLength(1);
-            expect(apps["single-query"].alive).toBe(true);
-            // expect(apps["single-query"].handlers).toHaveLength(4);
-        });
-    });
 
     describe("Routes", async () => {
         beforeAll(async () => {
