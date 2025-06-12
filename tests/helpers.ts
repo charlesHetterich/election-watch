@@ -55,7 +55,6 @@ export function clearRouteMocks(
     routes: Record<string, { trigger: MockInstance; lambda: MockInstance }[]>
 ) {
     for (const appName of Object.keys(routes)) {
-        console.log(appName);
         routes[appName].forEach((route) => {
             route.trigger = route.trigger.mockClear();
             route.lambda = route.lambda.mockClear();

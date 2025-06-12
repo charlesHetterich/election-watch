@@ -7,14 +7,12 @@ import { getSigner, getSpiedOnRoutes, clearRouteMocks } from "./helpers";
 import { appsDir, mockGetAPI } from "./mock";
 
 describe("Substrate Lambdas Client", async () => {
+    await cryptoWaitReady();
+
     let manager: AppsManager;
     let routes = await getSpiedOnRoutes();
     const alice = getSigner("Alice");
     const bob = getSigner("Bob");
-
-    beforeAll(async () => {
-        await cryptoWaitReady();
-    }, 20000);
 
     describe("Routes", async () => {
         beforeAll(async () => {
@@ -25,10 +23,6 @@ describe("Substrate Lambdas Client", async () => {
             manager.getAPI = mockGetAPI;
             await loadApps(appsDir, manager);
             await manager.launch();
-            await manager["apis"].polkadot.tx.System.remark({
-                remark: Binary.fromText("hello"),
-            }).signAndSubmit(alice.signer);
-            clearRouteMocks(routes);
 
             // Submit a series of transaction which the upcoming tests will use
             // [1] submit a tranfer from Alice to Bob
@@ -36,21 +30,21 @@ describe("Substrate Lambdas Client", async () => {
                 dest: MultiAddress.Id(bob.address),
                 value: 10_000_000_000n,
             }).signAndSubmit(alice.signer);
-            // [2] submit a remark from Alice
-            await manager["apis"].polkadot.tx.System.remark({
-                remark: Binary.fromText(""),
-            }).signAndSubmit(alice.signer);
-            // [1] submit a tranfer from Alice to Bob
+            // [2] submit another tranfer from Alice to Bob
             await manager["apis"].polkadot.tx.Balances.transfer_allow_death({
                 dest: MultiAddress.Id(bob.address),
                 value: 40_000_000_000n,
             }).signAndSubmit(alice.signer);
-        }, 20000);
+            // [3] submit a remark from Alice
+            await manager["apis"].polkadot.tx.System.remark({
+                remark: Binary.fromText(""),
+            }).signAndSubmit(alice.signer);
+        }, 30000);
 
         it("should handle event observables", async () => {
-            expect(routes["single-event"][0].trigger).toHaveBeenCalledTimes(2);
+            expect(routes["simple-event"][0].trigger).toHaveBeenCalledTimes(2);
             expect(
-                routes["single-event"][0].trigger.mock.calls[0][0].amount
+                routes["simple-event"][0].trigger.mock.calls[0][0].amount
             ).toEqual(10_000_000_000n);
         });
 
@@ -81,20 +75,18 @@ describe("Substrate Lambdas Client", async () => {
         });
 
         it("should handle storage observables with no keys", async () => {
-            expect(routes["single-query"][0].trigger).toHaveBeenCalledTimes(3);
+            expect(routes["simple-storage"][0].trigger).toHaveBeenCalledTimes(
+                4
+            );
         });
 
-        it.todo(
-            "should handle `Observables.storage` leaves and give payload in expected format, regardless of `.watchEntries` or `.watchValue`",
-            async () => {
-                expect.fail("not implemented");
-            }
-        );
-        it.todo(
-            "should filter `delete`, `upsert` payloads on `Observables.storage` according to `WatchLeaf.options`",
-            async () => {
-                expect.fail("not implemented");
-            }
-        );
+        it("should handle storage observables with keys (all keys given)", async () => {
+            expect(routes["simple-storage"][1].trigger).toHaveBeenCalledTimes(
+                3
+            );
+            expect(routes["simple-storage"][2].trigger).toHaveBeenCalledTimes(
+                1
+            );
+        });
     });
 });

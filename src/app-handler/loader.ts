@@ -166,10 +166,10 @@ if (import.meta.vitest) {
         expect(apps["invalid-module"].handlers).toHaveLength(0);
 
         // Check simple valid apps
-        expect(apps["single-event"].name).toEqual("single-event");
-        expect(apps["single-event"].alive).toBe(true);
-        expect(apps["single-event"].handlers).toHaveLength(1);
-        expect(apps["single-query"].alive).toBe(true);
-        // expect(apps["single-query"].handlers).toHaveLength(4);
+        expect(apps["simple-event"].name).toEqual("simple-event");
+        expect(apps["simple-event"].alive).toBe(true);
+        expect(apps["simple-event"].handlers).toHaveLength(1);
+        expect(apps["simple-storage"].alive).toBe(true);
+        expect(apps["simple-storage"].handlers).toHaveLength(3);
     });
 }
