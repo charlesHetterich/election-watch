@@ -113,7 +113,7 @@ fly scale count 1 -y # scale downn to single node
 fly apps destroy substrate-lambdas -y
 ```
 
-### Tests
+### Run tests
 Our testing suite assume the descriptors `polkadot`, `polkadot_asset_hub` and `rococo_v2_2` are available.
 
 Unit tests can be run with `npm run unit:test`. To run integration tests, first run `npm run testup` in one terminal instance, which will spin up the necessary [chopsticks](https://github.com/AcalaNetwork/chopsticks) mock chains. Then you may run `npm test` which will run all unit & integration tests.
