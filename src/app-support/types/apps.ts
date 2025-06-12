@@ -1,6 +1,6 @@
 import * as D from "@polkadot-api/descriptors";
 
-import { Payload, PossiblePayload } from "./payload";
+import { PossiblePayload } from "./payload";
 import { WatchLeaf } from "./observables";
 import { Context } from "../context";
 
@@ -49,39 +49,10 @@ export function App<const WLss extends readonly WatchLeaf[][]>(
     };
 }
 
-import type { SS58String, TypedApi } from "polkadot-api";
+import type { TypedApi } from "polkadot-api";
 if (import.meta.vitest) {
     const { test, expectTypeOf } = import.meta.vitest;
     const { Observables } = await import("./observables");
-
-    test("`Payload` should capture correct `Observable` payload for a given `WatchPath`", () => {
-        expectTypeOf<
-            Payload<{
-                chain: "polkadot";
-                path: "event.doesnt.exist";
-                args: [];
-                options: {};
-            }>
-        >().toEqualTypeOf<never>();
-
-        const ev_obs = Observables.event.polkadot.Balances.Transfer();
-        expectTypeOf<Payload<(typeof ev_obs)[number]>>().toEqualTypeOf<
-            D.PolkadotEvents["Balances"]["Transfer"]
-        >();
-
-        const st_obs =
-            Observables.storage.polkadotAssetHub.Balances.Account("some-id");
-        expectTypeOf<Payload<(typeof st_obs)[number]>>().toEqualTypeOf<{
-            key: D.Polkadot_asset_hubQueries["Balances"]["Account"]["KeyArgs"];
-            value: D.Polkadot_asset_hubQueries["Balances"]["Account"]["Value"];
-        }>();
-
-        const st2_obs = Observables.storage.polkadotAssetHub.System.Number();
-        expectTypeOf<Payload<(typeof st2_obs)[number]>>().toEqualTypeOf<{
-            key: D.Polkadot_asset_hubQueries["System"]["Number"]["KeyArgs"];
-            value: D.Polkadot_asset_hubQueries["System"]["Number"]["Value"];
-        }>();
-    });
 
     test("`App` function propagates correct payload type", () => {
         App("test", {
@@ -126,9 +97,5 @@ if (import.meta.vitest) {
                 },
             }
         );
-    });
-
-    test("test123", async () => {
-        const polkadot = D.polkadot;
     });
 }

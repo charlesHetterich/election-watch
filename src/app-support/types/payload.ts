@@ -85,6 +85,9 @@ export function narrowPayload<T extends WatchLeaf>(
     );
 }
 
+/**
+ * TODO! docs
+ */
 export async function processPayload<T extends WatchLeaf[]>(
     payload: PossiblePayload<T>,
     context: Context,
@@ -97,8 +100,39 @@ export async function processPayload<T extends WatchLeaf[]>(
 }
 
 if (import.meta.vitest) {
-    const { test, expect, describe } = import.meta.vitest;
-    test("TODO! Implement tests", () => {
-        expect("").toEqual("todo!");
+    const { test, expectTypeOf } = import.meta.vitest;
+    const { Observables } = await import("./observables");
+
+    test("should give `never` on `WatchLeaf` with invalid path", () => {
+        expectTypeOf<
+            Payload<{
+                chain: "polkadot";
+                path: "event.doesnt.exist";
+                args: [];
+                options: {};
+            }>
+        >().toEqualTypeOf<never>();
+    });
+
+    test("`should capture paylaods of *event observables*", () => {
+        const obs = Observables.event.polkadot.Balances.Transfer();
+        expectTypeOf<Payload<(typeof obs)[number]>>().toEqualTypeOf<
+            D.PolkadotEvents["Balances"]["Transfer"]
+        >();
+    });
+    test("`should capture paylaods of *storage observables* with keys", () => {
+        const obs =
+            Observables.storage.polkadotAssetHub.Balances.Account("some-id");
+        expectTypeOf<Payload<(typeof obs)[number]>>().toEqualTypeOf<{
+            key: D.Polkadot_asset_hubQueries["Balances"]["Account"]["KeyArgs"];
+            value: D.Polkadot_asset_hubQueries["Balances"]["Account"]["Value"];
+        }>();
+    });
+    test("`should capture paylaods of *storage observables* with no keys", () => {
+        const obs = Observables.storage.polkadotAssetHub.System.Number();
+        expectTypeOf<Payload<(typeof obs)[number]>>().toEqualTypeOf<{
+            key: D.Polkadot_asset_hubQueries["System"]["Number"]["KeyArgs"];
+            value: D.Polkadot_asset_hubQueries["System"]["Number"]["Value"];
+        }>();
     });
 }
