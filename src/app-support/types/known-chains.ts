@@ -107,11 +107,6 @@ export function getRelayId(chainId: ChainId): RelayId {
 }
 
 if (import.meta.vitest) {
-    /**
-     * For the tests in this file we assume the descriptors
-     * "polkadot", "polkadot_asset_hub" and "rococo_v2_2" are available.
-     */
-
     const { test, expect, expectTypeOf } = import.meta.vitest;
 
     test("`knownChains` & `ChainId` should contain the variable names of all available chain descriptors", () => {

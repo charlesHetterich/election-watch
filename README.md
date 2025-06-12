@@ -113,6 +113,12 @@ fly scale count 1 -y # scale downn to single node
 fly apps destroy substrate-lambdas -y
 ```
 
+### Tests
+Our testing suite assume the descriptors `polkadot`, `polkadot_asset_hub` and `rococo_v2_2` are available.
+
+Unit tests can be run with `npm run unit:test`. To run integration tests, first run `npm run testup` in one terminal instance, which will spin up the necessary [chopsticks](https://github.com/AcalaNetwork/chopsticks) mock chains. Then you may run `npm test` which will run all unit & integration tests.
+
+
 ## Create an app
 Applications are expected to be defined in `src/apps/<app-name>/index.ts` with the default export defined with a `description` & any number of `routes`, using the given `App` builder. ([**Example**](src/apps/polkadot-election-dataset-aggregator/index.ts))
 
