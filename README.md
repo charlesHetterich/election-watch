@@ -124,7 +124,7 @@ Applications are expected to be defined in `src/apps/<app-name>/index.ts` with t
 
 *In future iterations, the core of Substrate Lambdas will be available as a package & apps will be defined in their own independent projects— decoupled from the core code.*
 
-## Hardware Campaign & Long-Term Vision
+<!-- ## Hardware Campaign & Long-Term Vision
 > *Everyone & their mother* should have something between a raspberry-pi and a router plugged into their wall at home (i.e. a light-weight device that is always on, connected to the internet, & privately accessible). Hardware-wise, think of something like an Amazon Alexa. I feel like this product should be pretty feasible.
 >
 >My hope is this may enable seemingly complex background dapps to exist in a self-hosted manner
@@ -138,7 +138,7 @@ Applications are expected to be defined in `src/apps/<app-name>/index.ts` with t
 >which require no signing, since actions taken on your behalf are being run from your local, trusted machine. Many pseudo-backends can be built into this at-home lambda layer, and front ends can tweak settings with secure direct connection.
 ...
 
-You can get a rough idea of a longer term roadmap over on the [project board](https://github.com/users/charlesHetterich/projects/1).
+You can get a rough idea of a longer term roadmap over on the [project board](https://github.com/users/charlesHetterich/projects/1). -->
 
 <br><br><br>
 
