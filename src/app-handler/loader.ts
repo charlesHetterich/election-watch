@@ -82,7 +82,7 @@ async function loadApp(
     appName: string,
     manager: AppsManager
 ): Promise<LambdaApp> {
-    let app = new LambdaApp(appName, "", true, [], [], []);
+    let app = new LambdaApp(appName);
     try {
         // Load & expect `TAppModule`
         const appModule = (
@@ -93,7 +93,11 @@ async function loadApp(
         app.description = appModule.description.trim();
         app.chains = appModule.routes
             .map((route) => route.watching.map((leaf) => leaf.chain))
-            .flat();
+            .flat()
+            .reduce((acc: Record<string, number>, chain: string) => {
+                acc[chain] = (acc[chain] || 0) + 1;
+                return acc;
+            }, {});
         app.handlers = await Promise.all(
             appModule.routes.map(
                 async (route) => await handlerFromRoute(route, manager)

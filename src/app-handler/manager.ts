@@ -109,11 +109,21 @@ export class AppsManager {
                 chalk.green("ok") +
                 "] " +
                 chalk.green(app.name) +
-                "    " +
-                chalk.white.bold("watching ") +
-                chalk.grey(`[${app.chains.join(", ")}]`)
+                chalk.white.bold(" watching")
         );
-        console.log(chalk.grey(app.description) + "\n");
+        console.log(
+            Object.entries(app.chains)
+                .map(([chainId, n]) => {
+                    return (
+                        "  " +
+                        chalk.yellow(`${n} `) +
+                        chalk.grey("entries on ") +
+                        `${chainId}`
+                    );
+                })
+                .join("\n")
+        );
+        console.log("\n" + chalk.grey(app.description) + "\n\n");
     }
 
     launch() {
@@ -127,10 +137,10 @@ export class AppsManager {
             if (app.alive) {
                 const context = new Context(
                     Object.fromEntries(
-                        app.chains.map(
+                        (Object.keys(app.chains) as ChainId[]).map(
                             (cid) => [toVirtual(cid), this.apis[cid]] as const
                         )
-                    ) as ContextualAPIs<(typeof app.chains)[number]>
+                    ) as ContextualAPIs<ChainId>
                 );
                 app.launch(context);
             }

@@ -34,15 +34,12 @@ export type RouteHandler = (
  */
 export class LambdaApp {
     private subscriptions: Map<WatchLeaf, Subscription> = new Map();
-
-    constructor(
-        public name: string,
-        public description: string,
-        public alive: boolean,
-        public chains: ChainId[],
-        public handlers: RouteHandler[],
-        public logs: string[] = []
-    ) {}
+    public description: string = "";
+    public alive: boolean = true;
+    public chains = {} as Record<ChainId, number>;
+    public handlers: RouteHandler[] = [];
+    public logs: string[] = [];
+    constructor(public name: string) {}
 
     launch(context: Context<ChainId>) {
         this.handlers.forEach((handler) => {
