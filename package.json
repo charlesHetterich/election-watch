@@ -16,8 +16,13 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@codesandbox/sandpack-react": "^2.20.0",
+    "@docusaurus/module-type-aliases": "^3.8.1",
     "@types/node": "^22.14.0",
+    "docusaurus": "^1.14.7",
+    "docusaurus-plugin-typedoc-api": "^4.4.0",
     "ts-node": "^10.9.2",
+    "typedoc": "^0.28.5",
     "typescript": "^5.8.3",
     "vitest": "^3.1.4"
   },
