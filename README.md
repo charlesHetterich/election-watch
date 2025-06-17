@@ -98,6 +98,21 @@ Why HuggingFace? Well— it's git configured for handling big data... and gives 
 | **`system`**  | `account`     |               | System apps info  |
 |               | `users`       |               | System apps info  |
 |               | `health`      |               | System apps info  |
+<!-- 
+TODO! move this whole `dothome` commands table somewhere else. Start working on this documentation in
+an actual CLI tool sub-project, and do this idea-ation in the CLI's `--help` docs
+
+- Make sure to have as much `tab` auto-complete available as possible
+
+dothome dev chain list
+ - chain-name
+ - status: not-installed, out-of-date, up-to-date (according to metadata)
+ -->
+
+### Robust Platform
+###### TODO! extrapolate...
+- Metadata monitoring: while *Substrate Lambdas* is running, we actively monitor for metadata updates for all chain dependencies
+  - if we can, same kind of monitoring where-ever possible, like app updates (although these updates would need review before being applied). But this is important for detecting breaking changes and needing to shut down apps until updates are installed.
 
 # Quick Start
 All apps in `src/apps` will be run. Any apps that you would like to disable, rename the folder with a prefix of `_`. If you would like to run a custom app, create a new app folder & follow the specification defined in the [Apps](#apps) section.
