@@ -38,12 +38,35 @@ export default App(description, {
 }, { /** More routes across many chains . . . */ });
 ```
 `Observables` is a powerful entry point which stitches together [`TypedAPI`](https://papi.how/typed#typedapi)'s across all chains with [available descriptors](https://papi.how/codegen), with additional features. It
-- acts as a point of *discovery* for what is available across the polkadot ecosystem.
-- captures real-valued meta data about an application (such as *chain dependencies* of this application)
-- seemlessly makes relevant type information available to developers
-- `.all()`: allows specifying *Blanket* routes on events, which observe many events at once. For example, we may specify `Observables.event.Polkadot.Balances.all()`to watch all events within Polkadot's *Balances* pallet, or `Observables.event.Polkadot.all()` to watch all Polkadot events, with a single route.
+- Acts as a point of *discovery* for what is available across the polkadot ecosystem.
+- Captures real-valued meta data about an application (such as *chain dependencies* of this application)
+- Seemlessly makes relevant type information available to developers
+- `.all()`: Allows specifying *Blanket* routes on events, which observe many events at once. For example, we may specify `Observables.event.Polkadot.Balances.all()`to watch all events within Polkadot's *Balances* pallet, or `Observables.event.Polkadot.all()` to watch all Polkadot events, with a single route.
+- `narrowPayload`: Convenience function for branching to custom logic for some subset of `watching` when watching multiple *observables* in a single route. ***example:***
+```ts
+App(description, {
+    watching: [
+        Observables.event.polkadot.Balances.Deposit(),
+        Observables.event.polkadot.Balances.Withdraw()
+    ]
+    lambda(payload, context) {
+        // `typeof payload` is either of `Balances.Deposit | Balances.Withdraw`
+        if (narrowPayload(payload, this.watching[0])) {
+            /**
+             * Now `typeof payload` is specific to the 
+             * `Balances.Deposit` event in intellisense
+             * 
+             * Do custom transformation . . .
+             */ 
+        }
 
-You can refer to the list of supported [known chains](https://github.com/polkadot-api/polkadot-api/tree/main/packages/known-chains).
+        // Shared logic . . .
+        aggregate(payload);
+    },
+});
+```
+
+> You can refer to the list of supported [known chains](https://github.com/polkadot-api/polkadot-api/tree/main/packages/known-chains).
 
 ### Workers
 A core feature of Substrate Lambdas is the ability for apps to launch remote jobs in response to on-chain events. We provide a simple unified interface for app developers to launch jobs across a variety of cloud providers & server types.
