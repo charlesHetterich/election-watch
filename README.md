@@ -48,7 +48,7 @@ App(description, {
     watching: [
         Observables.event.polkadot.Balances.Deposit(),
         Observables.event.polkadot.Balances.Withdraw()
-    ]
+    ],
     lambda(payload, context) {
         // `typeof payload` is either of `Balances.Deposit | Balances.Withdraw`
         if (narrowPayload(payload, this.watching[0])) {
