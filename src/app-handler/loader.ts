@@ -5,8 +5,8 @@ import { Subscription } from "rxjs";
 import {
     Context,
     WatchLeaf,
-    TAppModule,
-    TRoute,
+    AppModule,
+    Route,
     ROOTS,
 } from "@lambdas/app-support";
 import { LambdaApp, RouteHandler, WatchType } from "./app";
@@ -16,7 +16,7 @@ import { AppsManager } from "./manager";
  * Creates a route handler from a route and an API
  */
 async function handlerFromRoute<WLs extends WatchLeaf[]>(
-    route: TRoute<WLs>,
+    route: Route<WLs>,
     manager: AppsManager
 ): Promise<RouteHandler> {
     let leafHandlers: ((context: Context) => [WatchLeaf, Subscription])[] = [];
@@ -87,7 +87,7 @@ async function loadApp(
         // Load & expect `TAppModule`
         const appModule = (
             await import(path.join(appsDir, appName, "index.ts"))
-        ).default as TAppModule<WatchLeaf[][]>;
+        ).default as AppModule<WatchLeaf[][]>;
 
         // Configure application from module
         app.description = appModule.description.trim();

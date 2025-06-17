@@ -4,7 +4,7 @@ import { MockInstance, vi } from "vitest";
 import { Keyring } from "@polkadot/api";
 import { getPolkadotSigner } from "polkadot-api/signer";
 
-import { TAppModule, WatchLeaf } from "@lambdas/app-support";
+import { AppModule, WatchLeaf } from "@lambdas/app-support";
 import { appsDir } from "./mock";
 
 export function getSigner(seed: string) {
@@ -36,7 +36,7 @@ export async function getSpiedOnRoutes() {
         try {
             const appModule = (
                 await import(path.join(appsDir, appName, "index.ts"))
-            ).default as TAppModule<WatchLeaf[][]>;
+            ).default as AppModule<WatchLeaf[][]>;
 
             acc[appName] = appModule.routes.map((route) => {
                 return {

@@ -8,7 +8,7 @@ import {
     VirtualChainId,
     ChainId,
 } from "../known-chains";
-import { TRoute } from "../apps";
+import { Route } from "../apps";
 
 import * as EVENT from "./event";
 import * as STORAGE from "./storage";
@@ -39,7 +39,7 @@ export namespace ROOTS {
  * Regardless of which root path we take from `Observables`, all leaves share this
  * common structure. One `WatchLeaf` always corresponds to a single "entity".
  *
- * We can handle more complex watch patterns in a single {@link TRoute} with lists of
+ * We can handle more complex watch patterns in a single {@link Route} with lists of
  * `WatchLeaf`s, or by using a higher level, builder pattern based `WatchCollection` class.
  *
  * @property chain   - The chain this leaf is for

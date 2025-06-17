@@ -13,8 +13,8 @@ import { Context } from "../context";
  * @property trigger  - Specifies the conditions under which we will take some `lambda` action
  * @property lambda   - The action to upon `trigger`'s conditions being satisfied
  */
-export type TRoute<
-    WLs extends readonly WatchLeaf[],
+export type Route<
+    WLs extends readonly WatchLeaf[] = readonly WatchLeaf[],
     WLss extends readonly WLs[] = [WLs]
 > = {
     watching: WLs;
@@ -31,9 +31,9 @@ export type TRoute<
 /**
  * Specifies a complete lambda application as a collection of routes and some peripheral settings.
  */
-export interface TAppModule<WLss extends readonly WatchLeaf[][]> {
+export interface AppModule<WLss extends readonly WatchLeaf[][]> {
     description: string;
-    routes: { [K in keyof WLss]: TRoute<WLss[K], WLss> };
+    routes: { [K in keyof WLss]: Route<WLss[K], WLss> };
 }
 
 /**
@@ -41,13 +41,42 @@ export interface TAppModule<WLss extends readonly WatchLeaf[][]> {
  */
 export function App<const WLss extends readonly WatchLeaf[][]>(
     description: string,
-    ...routes: { [K in keyof WLss]: TRoute<WLss[K], WLss> }
-): TAppModule<WLss> {
+    ...routes: { [K in keyof WLss]: Route<WLss[K], WLss> }
+): AppModule<WLss> {
     return {
         description,
         routes: routes,
     };
 }
+
+/**
+ * ## TApp
+ *
+ * Convenience type accessor when working outside of the {@link App} function
+ *
+ * ```ts
+ * import { TApp } from "@lambdas/app-support";
+ * import app from "./index";
+ *
+ * type App = TApp<typeof app>;
+ *
+ * function foo(
+ *     transfer: App["Routes"]["0"]["Payload"],
+ *     api: App["Context"]["apis"]["polkadot"]
+ * ) { }
+ * ```
+ */
+export type TApp<AppM extends AppModule<any>> = {
+    Routes: {
+        [K in Extract<keyof AppM["routes"], `${number}`>]: {
+            Payload: PossiblePayload<AppM["routes"][K]["watching"]>;
+            RTrigger: ReturnType<AppM["routes"][K]["trigger"]>;
+        };
+    };
+    Context: AppM extends AppModule<infer WLss>
+        ? Context<WLss[number][number]["chain"]>
+        : never;
+};
 
 import type { TypedApi } from "polkadot-api";
 if (import.meta.vitest) {
@@ -97,5 +126,34 @@ if (import.meta.vitest) {
                 },
             }
         );
+    });
+
+    test("`TApp` correctly organizes types extracted from an `AppModule` instance", () => {
+        const app = App(
+            "",
+            {
+                watching: Observables.event.polkadot.Bounties.BountyProposed(),
+                trigger: (_, c) => true,
+                lambda: (_, __) => {},
+            },
+            {
+                watching:
+                    Observables.event.rococoV2_2.Bounties.BountyProposed(),
+                trigger: (_, __) => true,
+                lambda: (_, c) => {},
+            }
+        );
+
+        type A = TApp<typeof app>;
+        expectTypeOf<A["Routes"]["0"]["Payload"]>().toEqualTypeOf<
+            D.PolkadotEvents["Bounties"]["BountyProposed"]
+        >();
+        expectTypeOf<A["Routes"]["1"]["Payload"]>().toEqualTypeOf<
+            D.Rococo_v2_2Events["Bounties"]["BountyProposed"]
+        >();
+        expectTypeOf<A["Context"]["apis"]>().toEqualTypeOf<{
+            polkadot: TypedApi<(typeof D)["polkadot"]>;
+            rococoV2_2: TypedApi<(typeof D)["rococo_v2_2"]>;
+        }>();
     });
 }

@@ -5,7 +5,7 @@ import { Split } from "./helpers";
 import { WatchLeaf } from "./observables";
 import { ROOTS } from "../types/observables";
 import { Context } from "../context";
-import { TRoute } from "./apps";
+import { Route } from "./apps";
 
 /**
  * Extract specific type inside of a descriptor tree, given by a list of type strings
@@ -91,8 +91,8 @@ export function narrowPayload<T extends WatchLeaf>(
 export async function processPayload<T extends WatchLeaf[]>(
     payload: PossiblePayload<T>,
     context: Context,
-    trigger: TRoute<T>["trigger"],
-    lambda: TRoute<T>["lambda"]
+    trigger: Route<T>["trigger"],
+    lambda: Route<T>["lambda"]
 ) {
     if (await trigger(payload, context)) {
         lambda(payload, context);

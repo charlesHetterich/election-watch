@@ -6,7 +6,7 @@ import { ChainId, FromVirtual, VirtualChainId } from "../known-chains";
 import { FuncTree, LeafFunction, WatchLeaf } from ".";
 import { Context } from "@lambdas/app-support/context";
 import { processPayload } from "../payload";
-import { TRoute } from "../apps";
+import { Route } from "../apps";
 
 export const name = "event";
 
@@ -72,8 +72,8 @@ export function handleLeaf<WL extends WatchLeaf, T>(
     watchable: {
         watch: () => Observable<T>;
     },
-    trigger: TRoute<[WL]>["trigger"],
-    lambda: TRoute<[WL]>["lambda"],
+    trigger: Route<[WL]>["trigger"],
+    lambda: Route<[WL]>["lambda"],
     leaf: WL
 ): (context: Context<ChainId>) => Subscription {
     return (context) => {
