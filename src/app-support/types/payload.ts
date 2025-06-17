@@ -100,7 +100,7 @@ export async function processPayload<T extends WatchLeaf[]>(
 }
 
 if (import.meta.vitest) {
-    const { test, expectTypeOf } = import.meta.vitest;
+    const { test, expect, expectTypeOf } = import.meta.vitest;
     const { Observables } = await import("./observables");
 
     test("should give `never` on `WatchLeaf` with invalid path", () => {
@@ -123,16 +123,73 @@ if (import.meta.vitest) {
     test("`should capture paylaods of *storage observables* with keys", () => {
         const obs =
             Observables.storage.polkadotAssetHub.Balances.Account("some-id");
-        expectTypeOf<Payload<(typeof obs)[number]>>().toEqualTypeOf<{
-            key: D.Polkadot_asset_hubQueries["Balances"]["Account"]["KeyArgs"];
-            value: D.Polkadot_asset_hubQueries["Balances"]["Account"]["Value"];
-        }>();
+        expectTypeOf<Payload<(typeof obs)[number]>>().toEqualTypeOf<
+            ROOTS.storage.PayloadStructure<
+                D.Polkadot_asset_hubQueries["Balances"]["Account"]["KeyArgs"],
+                D.Polkadot_asset_hubQueries["Balances"]["Account"]["Value"]
+            >
+        >();
     });
     test("`should capture paylaods of *storage observables* with no keys", () => {
         const obs = Observables.storage.polkadotAssetHub.System.Number();
-        expectTypeOf<Payload<(typeof obs)[number]>>().toEqualTypeOf<{
-            key: D.Polkadot_asset_hubQueries["System"]["Number"]["KeyArgs"];
-            value: D.Polkadot_asset_hubQueries["System"]["Number"]["Value"];
-        }>();
+        expectTypeOf<Payload<(typeof obs)[number]>>().toEqualTypeOf<
+            ROOTS.storage.PayloadStructure<
+                D.Polkadot_asset_hubQueries["System"]["Number"]["KeyArgs"],
+                D.Polkadot_asset_hubQueries["System"]["Number"]["Value"]
+            >
+        >();
+    });
+
+    test("`PossiblePayload` gives union of payloads", () => {
+        const watching = [
+            Observables.event.polkadot.Balances.Transfer()[0],
+            Observables.storage.polkadotAssetHub.Balances.Account("some-id")[0],
+        ] as const;
+        const payload = {} as PossiblePayload<typeof watching>;
+
+        expectTypeOf<typeof payload>().toEqualTypeOf<
+            | D.PolkadotEvents["Balances"]["Transfer"]
+            | ROOTS.storage.PayloadStructure<
+                  D.Polkadot_asset_hubQueries["Balances"]["Account"]["KeyArgs"],
+                  D.Polkadot_asset_hubQueries["Balances"]["Account"]["Value"]
+              >
+        >;
+    });
+
+    test("payloads inside of a `narrowPayload` branch should properly narrow according to the given `WatchLeaf`'s", () => {
+        const watching = [
+            Observables.event.polkadot.Balances.Transfer()[0],
+            Observables.storage.polkadotAssetHub.Balances.Account("some-id")[0],
+        ] as const;
+        const payload = { __meta: {} } as unknown as PossiblePayload<
+            typeof watching
+        >;
+
+        expectTypeOf<typeof payload>().not.toEqualTypeOf<
+            D.PolkadotEvents["Balances"]["Transfer"]
+        >;
+        if (narrowPayload(payload, watching[0])) {
+            expectTypeOf<typeof payload>().toEqualTypeOf<
+                D.PolkadotEvents["Balances"]["Transfer"]
+            >;
+        }
+    });
+
+    test("`narrowPayload` should only return true on relevant payloads", () => {
+        const watching = [
+            Observables.event.polkadot.Balances.Withdraw()[0],
+            Observables.event.polkadotAssetHub.Balances.Issued()[0],
+        ] as const;
+
+        const withdrawPayload = {
+            who: "",
+            amount: "",
+            __meta: {
+                chain: "polkadot",
+                path: "event.Balances.Withdraw",
+            },
+        };
+        expect(narrowPayload(withdrawPayload, watching[0])).toEqual(true);
+        expect(narrowPayload(withdrawPayload, watching[1])).toEqual(false);
     });
 }
