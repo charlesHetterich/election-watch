@@ -1,3 +1,6 @@
+import { S } from "vitest/dist/chunks/config.d.UqE-KR0o.js";
+import { TypeErrorMessage } from "./helpers";
+
 export class Settings {
     private trustedMachines: string[] = [];
     private accounts: string[] = [];
@@ -23,11 +26,11 @@ type ConfigurableType = "setting" | "permission" | "info";
  *
  */
 export type Configuration<CType extends ConfigurableType = ConfigurableType> = {
-    configType: CType;
+    readonly configType: CType;
 };
 
 export type InfoConfiguration<D extends string> = Configuration<"info"> & {
-    description: D;
+    readonly description: D;
 };
 export function Description<D extends string>(
     description: D
@@ -73,63 +76,88 @@ type Upper = Uppercase<Lower>;
 type FirstChar = Lower | Upper | "_"; // cannot be a digit
 type RestChar = FirstChar | Digit; // anything except other symbols
 
-type IsValidField<S extends string> = S extends "" // end of the string
+type _IsValidField<S extends string> = S extends "" // end of the string
     ? true
     : S extends `${RestChar}${infer Tail}` // eat one valid char
-    ? IsValidField<Tail> // …and recurse
+    ? _IsValidField<Tail> // …and recurse
     : false; // found an invalid char
 
-export type FieldName<S extends string> = S extends `${FirstChar}${infer Tail}` // check 1st character
-    ? IsValidField<Tail> extends true
-        ? S // ✅ good → keep the literal
-        : "Setting names must contain only letters, digits, or '_' and cannot start with a digit"
-    : "Setting names must contain only letters, digits, or '_' and cannot start with a digit";
+export type IsValidField<S extends string> =
+    S extends `${FirstChar}${infer Tail}` // check 1st character
+        ? _IsValidField<Tail> extends true
+            ? true
+            : false
+        : false;
 
-type efffedUP = FieldName<string>;
+export type ValidField<S extends string> = S extends `${FirstChar}${infer Tail}` // check 1st character
+    ? _IsValidField<Tail> extends true
+        ? S
+        : TypeErrorMessage<"Setting names must contain only letters, digits, or '_' and cannot start with a digit">
+    : TypeErrorMessage<"Setting names must contain only letters, digits, or '_' and cannot start with a digit">;
 
+// Setting names must contain only letters, digits, or '_' and cannot start with a digit
 export type SettingsConfiguration<
-    Field extends FieldName<string>,
+    Field extends string = string,
     T = any
 > = Configuration<"setting"> & {
-    __fieldType: T;
-    fieldType: string;
-    fieldName: Field;
+    readonly __fieldType: T;
+    readonly fieldType: string;
+    readonly fieldName: Field;
 };
-function omniSetting<const Field extends FieldName<string>, T = unknown>(
-    fieldName: Field,
+function omniSetting<const Field extends string, T = unknown>(
+    fieldName: ValidField<Field>,
     fieldType: string
 ): SettingsConfiguration<Field, T> {
     return {
         __fieldType: null as T,
         configType: "setting",
         fieldType: fieldType,
-        fieldName: fieldName,
+        fieldName: fieldName as unknown as Field,
     };
 }
 
 export const Setting = {
-    string<const Field extends string>(fieldName: FieldName<Field>) {
-        return omniSetting<FieldName<Field>, string>(fieldName, "string");
+    /**
+     * DOCS!
+     */
+    string<const Field extends string>(fieldName: ValidField<Field>) {
+        return omniSetting<Field, string>(fieldName, "string");
     },
 
-    number<const Field extends string>(fieldName: FieldName<Field>) {
-        return omniSetting<FieldName<Field>, number>(fieldName, "number");
+    /**
+     * DOCS!
+     */
+    number<const Field extends string>(fieldName: ValidField<Field>) {
+        return omniSetting<Field, number>(fieldName, "number");
     },
 
-    bool<const Field extends string>(fieldName: FieldName<Field>) {
-        return omniSetting<FieldName<Field>, boolean>(fieldName, "boolean");
+    /**
+     * DOCS!
+     */
+    bool<const Field extends string>(fieldName: ValidField<Field>) {
+        return omniSetting<Field, boolean>(fieldName, "boolean");
     },
 
-    secret<const Field extends string>(fieldName: FieldName<Field>) {
-        return omniSetting<FieldName<Field>, string>(fieldName, "secret");
+    /**
+     * DOCS!
+     */
+    secret<const Field extends string>(fieldName: ValidField<Field>) {
+        return omniSetting<Field, string>(fieldName, "secret");
     },
 };
 
 type TPermission = "transact" | "write-file";
 
-export function Permission(restrictiveId: TPermission) {
+export type PermissionConfiguration<T extends TPermission> =
+    Configuration<"permission"> & {
+        readonly permission: T;
+    };
+
+export function Permission<P extends TPermission>(
+    restrictiveId: P
+): PermissionConfiguration<P> {
     return {
-        type: "permission" as const,
-        fieldName: restrictiveId,
+        configType: "permission",
+        permission: restrictiveId,
     };
 }
