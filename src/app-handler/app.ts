@@ -1,5 +1,6 @@
 import { Subscription } from "rxjs";
 import { ChainId, Context, WatchLeaf } from "@lambdas/app-support";
+import { AppConfig } from "./configurations";
 
 /**
  * The set of valid root `Observables`
@@ -34,7 +35,7 @@ export type RouteHandler = (
  */
 export class LambdaApp {
     private subscriptions: Map<WatchLeaf, Subscription> = new Map();
-    public description: string = "";
+    public config = {} as AppConfig;
     public alive: boolean = true;
     public chains = {} as Record<ChainId, number>;
     public handlers: RouteHandler[] = [];

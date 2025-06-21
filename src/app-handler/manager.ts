@@ -129,7 +129,7 @@ export class AppsManager {
                 })
                 .join("\n")
         );
-        console.log("\n" + chalk.grey(app.description) + "\n\n");
+        console.log("\n" + chalk.grey(app.config.description) + "\n\n");
     }
 
     launch() {
@@ -147,7 +147,7 @@ export class AppsManager {
                             (cid) => [toVirtual(cid), this.apis[cid]] as const
                         )
                     ) as ContextualAPIs<ChainId>,
-                    {} // TODO! Add real settings here
+                    app.config.settings
                 );
                 app.launch(context);
             }

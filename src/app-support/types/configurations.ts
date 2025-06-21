@@ -19,9 +19,9 @@ export type Configuration<CType extends ConfigurableType = ConfigurableType> = {
  *
  * Docs!
  */
-export type InfoConfiguration<D extends string> =
+export type InfoConfiguration<D extends string = string> =
     Configuration<ConfigType.Info> & {
-        readonly description: D;
+        readonly description?: D;
     };
 export function Description<D extends string>(
     description: D
@@ -89,7 +89,7 @@ export const Setting = {
 
 type TPermission = "transact" | "write-file";
 
-export type PermissionConfiguration<T extends TPermission> =
+export type PermissionConfiguration<T extends TPermission = TPermission> =
     Configuration<ConfigType.Permission> & {
         readonly permission: T;
     };

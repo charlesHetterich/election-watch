@@ -11,6 +11,7 @@ import {
 } from "@lambdas/app-support";
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
+import { loadConfigurations } from "./configurations";
 
 /**
  * Creates a route handler from a route and an API
@@ -89,10 +90,7 @@ async function loadApp(
             await import(path.join(appsDir, appName, "index.ts"))
         ).default as AppModule;
 
-        // TODO! Apply configurations & then get (maybe) description from there
-
-        // Configure application from module
-        app.description = ""; //appModule.description.trim();
+        app.config = loadConfigurations(appModule.config);
         app.chains = appModule.routes
             .map((route) => route.watching.map((leaf) => leaf.chain))
             .flat()
