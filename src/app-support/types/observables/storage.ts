@@ -51,31 +51,6 @@ export type PayloadStructure<Key, Value> = Expand<{
 }>;
 
 /**
- * TODO! Is there a way we can reference this inside of PAPI?
- *
- * Currently, its innaccessible, so we just redefine it ourselves, ripped directly from the
- * [watchEntries](https://github.com/polkadot-api/polkadot-api/blob/2634134b5f9ec02a44662c4ef92b15b1b5f1f509/packages/client/src/storage.ts#L229)
- * function
- */
-type WatchEntriesPayload = {
-    block: any;
-    deltas: null | {
-        deleted: Array<{
-            args: any;
-            value: NonNullable<any>;
-        }>;
-        upserted: Array<{
-            args: any;
-            value: NonNullable<any>;
-        }>;
-    };
-    entries: Array<{
-        args: any;
-        value: NonNullable<any>;
-    }>;
-};
-
-/**
  * A `storage` FuncTree for a blockchain given by `V`.
  */
 export type Tree<V extends VirtualChainId = VirtualChainId> = FuncTree<
@@ -107,7 +82,7 @@ export function handleLeaf(
                   ...leaf.args,
                   leaf.options.finalized ? "finalized" : "best"
               )
-        ).subscribe((payload: WatchEntriesPayload | any) => {
+        ).subscribe((payload: any) => {
             // Normalize payload structures from `watchEntries` and `watchValue`
             let _payload: { args: any; value: any }[];
             if (payload.entries) {
