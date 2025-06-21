@@ -1,11 +1,11 @@
-import { App, Observables } from "@lambdas/app-support";
+import { App, Config, Observables } from "@lambdas/app-support";
 import { sendEmail } from "./email";
 
 const description = `
 Listens for changes in npos election phases on the polkadot network and send a self-email (configured in .env) with the raw transition data JSON.
 `;
 
-export default App(description, {
+export default App([Config.Description(description)], {
     /**
      * Triggers for all phase transition events
      */

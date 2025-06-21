@@ -2,7 +2,7 @@ import { App, Observables } from "@lambdas/app-support";
 import { getSigner } from "../../helpers";
 
 export default App(
-    "",
+    [],
     /**
      * Simply watch the current block number of the Polkadot relay chain.
      * This should trigger once per block.

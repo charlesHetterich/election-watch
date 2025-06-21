@@ -1,4 +1,4 @@
-import { App, Observables } from "@lambdas/app-support";
+import { App, Config, Observables } from "@lambdas/app-support";
 import { aggData } from "./aggData";
 
 const description = `
@@ -7,7 +7,7 @@ Once per day, aggregates election snapshots & results into a Huggingface Dataset
 Data is downloaded locally, uploaded to Huggingface, and then deleted from local.
 `;
 
-export default App(description, {
+export default App([Config.Description(description)], {
     /**
      * Triggers when `Signed` phase begins. This should trigger once per era.
      */

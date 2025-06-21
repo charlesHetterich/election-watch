@@ -3,7 +3,7 @@ import { getSigner } from "../../helpers";
 import { encodeAddress } from "@polkadot/keyring";
 
 export default App(
-    "",
+    [],
     /**
      * Watch all events on the `System` pallet on the polkadot chain
      */
