@@ -9,6 +9,8 @@ type ConfigurableType = `${ConfigType}`;
 
 /**
  * ## Configuration
+ *
+ * Docs!
  */
 export type Configuration<CType extends ConfigurableType = ConfigurableType> = {
     readonly configType: CType;
