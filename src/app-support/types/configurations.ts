@@ -1,44 +1,46 @@
-import { S } from "vitest/dist/chunks/config.d.UqE-KR0o.js";
-import { TypeErrorMessage, ValidField } from "./helpers";
+import { ValidField } from "./helpers";
+
+export enum ConfigType {
+    Setting = "setting",
+    Permission = "permission",
+    Info = "info",
+}
+type ConfigurableType = `${ConfigType}`;
 
 /**
- * I was thinking about the idea of key'd events for light clients
- * (e.g. some metered live chat app) s
- *
- * There currently no concept of key'd events with how
- * substrate storage/events work, correct?
- *
- *
- *
- * Has this been discussed before? If not I think I will
- * make a forum post.
- */
-
-type ConfigurableType = "setting" | "permission" | "info";
-
-/**
- *
+ * ## Configuration
  */
 export type Configuration<CType extends ConfigurableType = ConfigurableType> = {
     readonly configType: CType;
 };
 
-export type InfoConfiguration<D extends string> = Configuration<"info"> & {
-    readonly description: D;
-};
+/**
+ * ## Info Configuration
+ *
+ * Docs!
+ */
+export type InfoConfiguration<D extends string> =
+    Configuration<ConfigType.Info> & {
+        readonly description: D;
+    };
 export function Description<D extends string>(
     description: D
 ): InfoConfiguration<D> {
     return {
-        configType: "info" as const,
+        configType: ConfigType.Info,
         description,
     };
 }
 
+/**
+ * ## SettingsConfiguration
+ *
+ * Docs!
+ */
 export type SettingsConfiguration<
     Field extends string = string,
     T = any
-> = Configuration<"setting"> & {
+> = Configuration<ConfigType.Setting> & {
     readonly __fieldType: T;
     readonly fieldType: string;
     readonly fieldName: Field;
@@ -49,7 +51,7 @@ function omniSetting<const Field extends string, T = unknown>(
 ): SettingsConfiguration<Field, T> {
     return {
         __fieldType: null as T,
-        configType: "setting",
+        configType: ConfigType.Setting,
         fieldType: fieldType,
         fieldName: fieldName as unknown as Field,
     };
@@ -88,7 +90,7 @@ export const Setting = {
 type TPermission = "transact" | "write-file";
 
 export type PermissionConfiguration<T extends TPermission> =
-    Configuration<"permission"> & {
+    Configuration<ConfigType.Permission> & {
         readonly permission: T;
     };
 
@@ -96,7 +98,7 @@ export function Permission<P extends TPermission>(
     restrictiveId: P
 ): PermissionConfiguration<P> {
     return {
-        configType: "permission",
+        configType: ConfigType.Permission,
         permission: restrictiveId,
     };
 }

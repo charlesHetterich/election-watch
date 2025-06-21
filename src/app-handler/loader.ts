@@ -15,8 +15,8 @@ import { AppsManager } from "./manager";
 /**
  * Creates a route handler from a route and an API
  */
-async function handlerFromRoute<WLs extends WatchLeaf[]>(
-    route: Route<WLs>,
+async function handlerFromRoute(
+    route: Route,
     manager: AppsManager
 ): Promise<RouteHandler> {
     let leafHandlers: ((context: Context) => [WatchLeaf, Subscription])[] = [];
@@ -87,10 +87,12 @@ async function loadApp(
         // Load & expect `TAppModule`
         const appModule = (
             await import(path.join(appsDir, appName, "index.ts"))
-        ).default as AppModule<WatchLeaf[][]>;
+        ).default as AppModule;
+
+        // TODO! Apply configurations & then get (maybe) description from there
 
         // Configure application from module
-        app.description = appModule.description.trim();
+        app.description = ""; //appModule.description.trim();
         app.chains = appModule.routes
             .map((route) => route.watching.map((leaf) => leaf.chain))
             .flat()

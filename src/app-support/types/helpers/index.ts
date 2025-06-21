@@ -1,5 +1,8 @@
 export * from "./field-names";
 
+/**
+ * We like to display error messages in favor of giving `never`
+ */
 export type TypeErrorMessage<S extends string> = {
     msg: S;
 };

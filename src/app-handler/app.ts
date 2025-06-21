@@ -41,7 +41,7 @@ export class LambdaApp {
     public logs: string[] = [];
     constructor(public name: string) {}
 
-    launch(context: Context<ChainId>) {
+    launch(context: Context) {
         this.handlers.forEach((handler) => {
             handler(context).forEach(([leaf, subscription]) => {
                 this.subscriptions.set(leaf, subscription);

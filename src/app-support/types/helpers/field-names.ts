@@ -1,6 +1,6 @@
 import { TypeErrorMessage } from ".";
 
-type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+export type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 
 type Lower =
     | "a"
@@ -29,27 +29,26 @@ type Lower =
     | "x"
     | "y"
     | "z";
-
 type Upper = Uppercase<Lower>;
+export type Letter = Lower | Upper;
 
-type FirstChar = Lower | Upper | "_"; // cannot be a digit
-type RestChar = FirstChar | Digit; // anything except other symbols
-
-type _IsValidField<S extends string> = S extends "" // end of the string
+type FirstChar = Letter | "_";
+type RestChar = FirstChar | Digit;
+type _IsValidField<S extends string> = S extends ""
     ? true
-    : S extends `${RestChar}${infer Tail}` // eat one valid char
-    ? _IsValidField<Tail> // …and recurse
-    : false; // found an invalid char
-
-export type IsValidField<S extends string> =
-    S extends `${FirstChar}${infer Tail}` // check 1st character
-        ? _IsValidField<Tail> extends true
-            ? true
-            : false
-        : false;
-
-export type ValidField<S extends string> = S extends `${FirstChar}${infer Tail}` // check 1st character
+    : S extends `${RestChar}${infer Tail}`
+    ? _IsValidField<Tail>
+    : false;
+type IsValidField<S extends string> = S extends `${FirstChar}${infer Tail}`
     ? _IsValidField<Tail> extends true
-        ? S
-        : TypeErrorMessage<"Setting names must contain only letters, digits, or '_' and cannot start with a digit">
-    : TypeErrorMessage<"Setting names must contain only letters, digits, or '_' and cannot start with a digit">;
+        ? true
+        : false
+    : false;
+
+/**
+ * Type used to restrict function inputs to valid field
+ * names with type-level errors.
+ */
+export type ValidField<S extends string> = IsValidField<S> extends true
+    ? S
+    : TypeErrorMessage<"Setting field name must contain only letters, digits, or '_' and cannot start with a digit">;

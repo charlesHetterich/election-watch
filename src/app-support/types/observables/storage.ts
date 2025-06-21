@@ -88,14 +88,14 @@ export type Tree<V extends VirtualChainId = VirtualChainId> = FuncTree<
  * See PAPI [Storage Queries](https://papi.how/typed/queries) for more understanding
  * of how we handle `.watchEntries` and `.watchValue`.
  */
-export function handleLeaf<WL extends WatchLeaf, T extends WatchEntriesPayload>(
+export function handleLeaf(
     watchable: {
-        watchEntries: (...args: any[]) => Observable<T>;
-        watchValue: (...args: any[]) => Observable<T>;
+        watchEntries: (...args: any[]) => Observable<any>;
+        watchValue: (...args: any[]) => Observable<any>;
     },
-    trigger: Route<[WL]>["trigger"],
-    lambda: Route<[WL]>["lambda"],
-    leaf: WL,
+    trigger: Route["trigger"],
+    lambda: Route["lambda"],
+    leaf: WatchLeaf,
     nArgs: number
 ): (context: Context<ChainId>) => Subscription {
     return (context) =>
