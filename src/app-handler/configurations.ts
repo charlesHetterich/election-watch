@@ -104,9 +104,9 @@ async function fetchSetting(
     }
 
     setSetting({
-        app: appName,
-        field_name: fieldName,
-        field_type: fieldType,
+        appName: appName,
+        fieldName: fieldName,
+        fieldType: fieldType,
         value: setting,
     });
     return setting;

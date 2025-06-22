@@ -1,52 +1,22 @@
-import Database from "better-sqlite3";
+import DB from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { join } from "path";
 import { existsSync, mkdirSync } from "fs";
-import { Config } from "@lambdas/app-support";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
+const MIGRATIONS_DIR = `${dirname(fileURLToPath(import.meta.url))}/migrations`;
 const DB_DIR = join(process.cwd(), "bin");
+
+// Open database connection
 if (!existsSync(DB_DIR)) mkdirSync(DB_DIR, { recursive: true });
-const db = new Database(join(DB_DIR, "sl_database.db"));
+const raw_db = new DB(join(DB_DIR, "sl_database.db"));
+export const db = drizzle(raw_db);
 
-export interface SettingRow {
-    app: string;
-    field_name: string;
-    field_type: Config.SettingFieldType;
-    value: unknown;
-}
+// Update table structures if new migrations are available
+await migrate(db, {
+    migrationsFolder: MIGRATIONS_DIR,
+});
 
-export interface LogRow {
-    id: number;
-    timestamp: number;
-    app: string;
-    content: string;
-}
-
-db.exec(`
-PRAGMA foreign_keys = ON;
-
-CREATE TABLE IF NOT EXISTS settings (
-  app        TEXT NOT NULL,
-  field_name TEXT NOT NULL,
-  field_type TEXT NOT NULL CHECK (
-                field_type IN ('string','number','boolean','secret')
-              ),
-  value,
-  PRIMARY KEY (app, field_name)
-);
-
-CREATE INDEX IF NOT EXISTS idx_settings_app
-  ON settings (app);
-
-CREATE TABLE IF NOT EXISTS logs (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  timestamp  INTEGER NOT NULL,   -- epoch-ms
-  app        TEXT NOT NULL,
-  content    TEXT NOT NULL,
-  FOREIGN KEY (app) REFERENCES settings(app) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_logs_app_ts
-  ON logs (app, timestamp DESC);
-`);
-
-export { db };
+export * from "./schema";
