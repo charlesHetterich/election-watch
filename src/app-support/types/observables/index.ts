@@ -199,7 +199,7 @@ async function buildFuncTree(
  *
  * The root `Observables` object.
  *
- * TODO! docs here
+ * DOCS! docs here
  */
 export const Observables: Readonly<{
     event: { [V in VirtualChainId]: ROOTS.event.Tree<V> };
