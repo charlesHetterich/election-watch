@@ -1,4 +1,4 @@
-import { ValidField } from "./helpers";
+import { Expand, ValidField } from "./helpers";
 
 export enum ConfigType {
     Setting = "setting",
@@ -10,7 +10,7 @@ type ConfigurableType = `${ConfigType}`;
 /**
  * ## Configuration
  *
- * Docs!
+ * DOCS!
  */
 export type Configuration<CType extends ConfigurableType = ConfigurableType> = {
     readonly configType: CType;
@@ -19,7 +19,7 @@ export type Configuration<CType extends ConfigurableType = ConfigurableType> = {
 /**
  * ## Info Configuration
  *
- * Docs!
+ * DOCS!
  */
 export type InfoConfiguration<D extends string = string> =
     Configuration<ConfigType.Info> & {
@@ -34,22 +34,26 @@ export function Description<D extends string>(
     };
 }
 
+export type SettingFieldType = Expand<
+    "string" | "number" | "boolean" | "secret"
+>;
 /**
  * ## SettingsConfiguration
  *
- * Docs!
+ * DOCS!
  */
 export type SettingsConfiguration<
     Field extends string = string,
     T = any
 > = Configuration<ConfigType.Setting> & {
     readonly __fieldType: T;
-    readonly fieldType: string;
+    readonly fieldType: SettingFieldType;
     readonly fieldName: Field;
 };
+
 function omniSetting<const Field extends string, T = unknown>(
     fieldName: ValidField<Field>,
-    fieldType: string
+    fieldType: SettingFieldType
 ): SettingsConfiguration<Field, T> {
     return {
         __fieldType: null as T,

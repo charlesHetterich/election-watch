@@ -129,6 +129,7 @@ export class AppsManager {
                 })
                 .join("\n")
         );
+        console.log(app.config.settings);
         console.log("\n" + chalk.grey(app.config.description) + "\n\n");
     }
 

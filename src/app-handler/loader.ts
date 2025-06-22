@@ -90,7 +90,7 @@ async function loadApp(
             await import(path.join(appsDir, appName, "index.ts"))
         ).default as AppModule;
 
-        app.config = loadConfigurations(appModule.config);
+        app.config = await loadConfigurations(appName, appModule.config);
         app.chains = appModule.routes
             .map((route) => route.watching.map((leaf) => leaf.chain))
             .flat()
