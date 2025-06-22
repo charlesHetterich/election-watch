@@ -2,17 +2,12 @@ import { Config } from "@lambdas/app-support";
 import { Expand } from "@lambdas/app-support/types/helpers";
 import path from "path";
 import readline from "readline";
-import { getSetting, setSetting } from "./cache";
+import DB from "./database";
 
 /**
  * ## AppConfig
  * Holds all application-wide configurations.
  *
- * #### General App Information
- * ...
- *
- * #### Settings
- * ...
  */
 export type AppConfig = Expand<
     Required<
@@ -21,6 +16,21 @@ export type AppConfig = Expand<
         } & Omit<Config.InfoConfiguration, "configType">
     >
 >;
+
+function processRawSetting(value: unknown, fieldType: Config.SettingFieldType) {
+    switch (fieldType) {
+        case "boolean":
+            return value === 1;
+        case "number":
+            return Number(value);
+        case "string":
+            return String(value);
+        case "secret":
+            return String(value);
+        default:
+            throw new Error(`Unknown field type: ${fieldType}`);
+    }
+}
 
 /**
  * Prompts the user for input via the console.
@@ -31,79 +41,28 @@ async function fetchSetting(
     fieldName: string,
     fieldType: Config.SettingFieldType
 ): Promise<unknown> {
-    // Check cache
-    let setting = getSetting(appName, fieldName);
+    // Check for & return if available
+    let setting = DB.settings.get(appName, fieldName);
     if (setting !== undefined) {
         return setting;
     }
 
+    // Capture input from user
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
         terminal: true,
     });
-
-    function ask(prompt: string, hideInput = false): Promise<string> {
-        if (!hideInput) {
-            return new Promise((resolve) => rl.question(prompt, resolve));
-        } else {
-            // Hide input for secrets
-            return new Promise((resolve) => {
-                const stdin = process.stdin;
-                const onData = (char: Buffer) => {
-                    const charStr = char.toString();
-                    switch (charStr) {
-                        case "\n":
-                        case "\r":
-                        case "\u0004":
-                            stdin.pause();
-                            break;
-                        default:
-                            process.stdout.clearLine(0);
-                            process.stdout.cursorTo(0);
-                            process.stdout.write(
-                                prompt + Array(rl.line.length + 1).join("*")
-                            );
-                            break;
-                    }
-                };
-                process.stdin.on("data", onData);
-                rl.question(prompt, (value) => {
-                    process.stdin.removeListener("data", onData);
-                    process.stdout.write("\n");
-                    resolve(value);
-                });
-            });
-        }
-    }
-
-    let prompt = `Enter value for "${fieldName}" (${fieldType}): `;
-
-    let input: string = "";
-    if (fieldType === "secret") {
-        input = await ask(prompt, true);
-    } else {
-        input = await ask(prompt);
-    }
+    let input: string = await new Promise((resolve) =>
+        rl.question(`Enter value for "${fieldName}" (${fieldType}): `, resolve)
+    );
     rl.close();
 
-    switch (fieldType) {
-        case "boolean":
-            setting =
-                input.trim().toLowerCase() === "true" || input.trim() === "1"
-                    ? 1
-                    : 0;
-            break;
-        case "number":
-            setting = Number(input);
-            break;
-        case "string":
-        case "secret":
-        default:
-            setting = input;
-    }
+    // Convert user input to the correct type
+    setting = processRawSetting(input, fieldType);
 
-    setSetting({
+    // Add setting to database
+    DB.settings.set({
         appName: appName,
         fieldName: fieldName,
         fieldType: fieldType,
@@ -121,7 +80,6 @@ export async function loadConfigurations(
         description: "",
     };
 
-    // console.log(config);
     for (const cfg of config) {
         switch (cfg.configType) {
             case Config.ConfigType.Setting:
