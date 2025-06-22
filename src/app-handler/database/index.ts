@@ -60,5 +60,3 @@ export default {
         },
     },
 };
-
-export * from "./schema";
