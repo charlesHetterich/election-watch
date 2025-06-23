@@ -68,14 +68,14 @@ export type Tree<V extends VirtualChainId = VirtualChainId> = FuncTree<
     typeof TreeExtension
 >;
 
-export function handleLeaf<WL extends WatchLeaf, T>(
+export function handleLeaf(
     watchable: {
-        watch: () => Observable<T>;
+        watch: () => Observable<any>;
     },
-    trigger: Route<[WL]>["trigger"],
-    lambda: Route<[WL]>["lambda"],
-    leaf: WL
-): (context: Context<ChainId>) => Subscription {
+    trigger: Route["trigger"],
+    lambda: Route["lambda"],
+    leaf: WatchLeaf
+): (context: Context) => Subscription {
     return (context) => {
         return watchable.watch().subscribe((data: any) => {
             const payload = {

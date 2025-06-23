@@ -86,13 +86,13 @@ export function narrowPayload<T extends WatchLeaf>(
 }
 
 /**
- * TODO! docs
+ * DOCS! docs
  */
-export async function processPayload<T extends WatchLeaf[]>(
-    payload: PossiblePayload<T>,
-    context: Context,
-    trigger: Route<T>["trigger"],
-    lambda: Route<T>["lambda"]
+export async function processPayload<WLs extends WatchLeaf[]>(
+    payload: PossiblePayload<WLs>,
+    context: Context<WLs[number]["chain"]>,
+    trigger: Route<WLs>["trigger"],
+    lambda: Route<WLs>["lambda"]
 ) {
     if (await trigger(payload, context)) {
         lambda(payload, context);

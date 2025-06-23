@@ -1,4 +1,4 @@
-import { App, Observables, workers } from "@lambdas/app-support";
+import { App, Config, Observables, workers } from "@lambdas/app-support";
 
 const description = `
 Once per day when the \`Signed\` phase of the npos election cycle begins, spin up a *vast.ai* worker to calculate & submit an election solution using a parameterized reinforcement learning model.
@@ -6,7 +6,7 @@ Once per day when the \`Signed\` phase of the npos election cycle begins, spin u
 The worker is destroyed when a \`SolutionStored\` event is emitted with self as the origin
 `;
 
-export default App(description, {
+export default App([Config.Description(description)], {
     /**
      * Triggers when `Signed` phase begins. This should trigger once per era.
      */

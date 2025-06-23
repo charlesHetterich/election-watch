@@ -3,6 +3,7 @@ import * as D from "@polkadot-api/descriptors";
 import { PossiblePayload } from "./payload";
 import { WatchLeaf } from "./observables";
 import { Context } from "../context";
+import * as Config from "./configurations";
 
 /**
  * Specifies a single route within an lambda application.
@@ -15,37 +16,61 @@ import { Context } from "../context";
  */
 export type Route<
     WLs extends readonly WatchLeaf[] = readonly WatchLeaf[],
-    WLss extends readonly WLs[] = [WLs]
+    WLss extends readonly WLs[] = [WLs],
+    Config extends readonly Config.Configuration[] = readonly Config.Configuration[]
 > = {
+    /**
+     * ## watching
+     *
+     * DOCS! explain `watching` property
+     */
     watching: WLs;
+
+    /**
+     * ## trigger
+     *
+     * DOCS! explain the `trigger` function
+     */
     trigger: (
         payload: PossiblePayload<WLs>,
-        context: Context<WLss[number][number]["chain"]>
+        context: Expand<Context<WLss[number][number]["chain"], Config>>
     ) => boolean | Promise<boolean>;
+
+    /**
+     * ## lambda
+     *
+     * DOCS! explain the `lambda` function
+     */
     lambda: (
         payload: PossiblePayload<WLs>,
-        context: Context<WLss[number][number]["chain"]>
+        context: Expand<Context<WLss[number][number]["chain"], Config>>
     ) => void | Promise<void>;
 };
 
 /**
  * Specifies a complete lambda application as a collection of routes and some peripheral settings.
  */
-export interface AppModule<WLss extends readonly WatchLeaf[][]> {
-    description: string;
-    routes: { [K in keyof WLss]: Route<WLss[K], WLss> };
+export interface AppModule<
+    WLss extends readonly WatchLeaf[][] = WatchLeaf[][],
+    Config extends readonly Config.Configuration[] = Config.Configuration[]
+> {
+    config: Config;
+    routes: { [K in keyof WLss]: Route<WLss[K], WLss, Config> };
 }
 
 /**
  * Convenience builder function for specifying a lambda `TAppModule` with built-in type hints.
  */
-export function App<const WLss extends readonly WatchLeaf[][]>(
-    description: string,
-    ...routes: { [K in keyof WLss]: Route<WLss[K], WLss> }
-): AppModule<WLss> {
+export function App<
+    const WLss extends readonly WatchLeaf[][],
+    const Config extends readonly Config.Configuration[]
+>(
+    config: Config,
+    ...routes: { [K in keyof WLss]: Route<WLss[K], WLss, Config> }
+): AppModule<WLss, Config> {
     return {
-        description,
-        routes: routes,
+        config,
+        routes,
     };
 }
 
@@ -66,25 +91,26 @@ export function App<const WLss extends readonly WatchLeaf[][]>(
  * ) { }
  * ```
  */
-export type TApp<AppM extends AppModule<any>> = {
+export type TApp<AppM extends AppModule<any, any>> = {
     Routes: {
         [K in Extract<keyof AppM["routes"], `${number}`>]: {
             Payload: PossiblePayload<AppM["routes"][K]["watching"]>;
             RTrigger: ReturnType<AppM["routes"][K]["trigger"]>;
         };
     };
-    Context: AppM extends AppModule<infer WLss>
-        ? Context<WLss[number][number]["chain"]>
+    Context: AppM extends AppModule<infer WLss, infer Config>
+        ? Context<WLss[number][number]["chain"], Config>
         : never;
 };
 
 import type { TypedApi } from "polkadot-api";
+import { Expand } from "./helpers";
 if (import.meta.vitest) {
     const { test, expectTypeOf } = import.meta.vitest;
     const { Observables } = await import("./observables");
 
     test("`App` function propagates correct payload type", () => {
-        App("test", {
+        App([Config.Description("test")], {
             watching: Observables.event.polkadot.Bounties.BountyProposed(),
             trigger: (payload, _) => {
                 expectTypeOf<typeof payload>().toEqualTypeOf<
@@ -102,7 +128,7 @@ if (import.meta.vitest) {
 
     test("`App` function correctly propagates many depended on chains through context", () => {
         App(
-            "test",
+            [Config.Description("test")],
             {
                 watching: Observables.event.polkadot.Bounties.BountyProposed(),
                 trigger: (_, c) => {
@@ -128,9 +154,52 @@ if (import.meta.vitest) {
         );
     });
 
+    test("`App` function correctly propagates settings configurations through context", () => {
+        App(
+            [
+                Config.Description("test"),
+                Config.Setting.string("email"),
+                Config.Setting.secret("password"),
+                Config.Setting.bool("enabled"),
+                Config.Setting.number("frequency"),
+                Config.Permission("write-file"),
+            ],
+            {
+                watching: Observables.event.polkadot.Bounties.BountyProposed(),
+                trigger: (_, c) => {
+                    expectTypeOf<typeof c.settings>().toEqualTypeOf<{
+                        readonly email: string;
+                        readonly password: string;
+                        readonly enabled: boolean;
+                        readonly frequency: number;
+                    }>();
+                    return true;
+                },
+                lambda: (_, __) => {},
+            },
+            {
+                watching:
+                    Observables.event.rococoV2_2.Bounties.BountyProposed(),
+                trigger: (_, __) => true,
+                lambda: (_, c) => {
+                    expectTypeOf<typeof c.settings>().toEqualTypeOf<{
+                        readonly email: string;
+                        readonly password: string;
+                        readonly enabled: boolean;
+                        readonly frequency: number;
+                    }>();
+                },
+            }
+        );
+    });
+
     test("`TApp` correctly organizes types extracted from an `AppModule` instance", () => {
         const app = App(
-            "",
+            [
+                Config.Description("test"),
+                Config.Setting.string("email"),
+                Config.Setting.secret("password"),
+            ],
             {
                 watching: Observables.event.polkadot.Bounties.BountyProposed(),
                 trigger: (_, c) => true,
@@ -151,9 +220,16 @@ if (import.meta.vitest) {
         expectTypeOf<A["Routes"]["1"]["Payload"]>().toEqualTypeOf<
             D.Rococo_v2_2Events["Bounties"]["BountyProposed"]
         >();
-        expectTypeOf<A["Context"]["apis"]>().toEqualTypeOf<{
-            polkadot: TypedApi<(typeof D)["polkadot"]>;
-            rococoV2_2: TypedApi<(typeof D)["rococo_v2_2"]>;
+        type dddd = A["Context"]["settings"];
+        expectTypeOf<A["Context"]>().toEqualTypeOf<{
+            apis: {
+                polkadot: TypedApi<(typeof D)["polkadot"]>;
+                rococoV2_2: TypedApi<(typeof D)["rococo_v2_2"]>;
+            };
+            settings: {
+                readonly email: string;
+                readonly password: string;
+            };
         }>();
     });
 }

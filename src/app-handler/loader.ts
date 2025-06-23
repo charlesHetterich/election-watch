@@ -11,12 +11,13 @@ import {
 } from "@lambdas/app-support";
 import { LambdaApp, RouteHandler, WatchType } from "./app";
 import { AppsManager } from "./manager";
+import { loadConfigurations } from "./configurations";
 
 /**
  * Creates a route handler from a route and an API
  */
-async function handlerFromRoute<WLs extends WatchLeaf[]>(
-    route: Route<WLs>,
+async function handlerFromRoute(
+    route: Route,
     manager: AppsManager
 ): Promise<RouteHandler> {
     let leafHandlers: ((context: Context) => [WatchLeaf, Subscription])[] = [];
@@ -87,10 +88,9 @@ async function loadApp(
         // Load & expect `TAppModule`
         const appModule = (
             await import(path.join(appsDir, appName, "index.ts"))
-        ).default as AppModule<WatchLeaf[][]>;
+        ).default as AppModule;
 
-        // Configure application from module
-        app.description = appModule.description.trim();
+        app.config = await loadConfigurations(appName, appModule.config);
         app.chains = appModule.routes
             .map((route) => route.watching.map((leaf) => leaf.chain))
             .flat()

@@ -35,11 +35,17 @@ export class AppsManager {
         this.lightClient = start();
     }
 
+    /**
+     *
+     */
     public async shutdown() {
         this.apps.forEach((app) => app.shutdown());
         await this.lightClient.terminate();
     }
 
+    /**
+     *
+     */
     public async getCodec(chainId: ChainId) {
         if (!this.codecs[chainId]) {
             this.codecs[chainId] = await getTypedCodecs(D[chainId]);
@@ -123,7 +129,8 @@ export class AppsManager {
                 })
                 .join("\n")
         );
-        console.log("\n" + chalk.grey(app.description) + "\n\n");
+        console.log(app.config.settings);
+        console.log("\n" + chalk.grey(app.config.description) + "\n\n");
     }
 
     launch() {
@@ -140,10 +147,22 @@ export class AppsManager {
                         (Object.keys(app.chains) as ChainId[]).map(
                             (cid) => [toVirtual(cid), this.apis[cid]] as const
                         )
-                    ) as ContextualAPIs<ChainId>
+                    ) as ContextualAPIs<ChainId>,
+                    app.config.settings
                 );
                 app.launch(context);
             }
         });
     }
+}
+
+if (import.meta.vitest) {
+    const { test, expect } = import.meta.vitest;
+    const appsDir = "tests/mock-apps";
+
+    /**
+     * TODO! test that payloads properly get `__meta`
+     *       attached to them when entering `lambda` & `trigger`
+     */
+    test.todo("");
 }
