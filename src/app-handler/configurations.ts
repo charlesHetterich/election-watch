@@ -1,6 +1,11 @@
-import { Config } from "@lambdas/app-support";
+import {
+    ConfigType,
+    Configuration,
+    InfoConfiguration,
+    SettingFieldType,
+    SettingsConfiguration,
+} from "@lambdas/app-support";
 import { Expand } from "@lambdas/app-support/types/helpers";
-import path from "path";
 import readline from "readline";
 import DB from "./database";
 
@@ -13,11 +18,11 @@ export type AppConfig = Expand<
     Required<
         {
             readonly settings: Record<string, any>;
-        } & Omit<Config.InfoConfiguration, "configType">
+        } & Omit<InfoConfiguration, "configType">
     >
 >;
 
-function processRawSetting(value: unknown, fieldType: Config.SettingFieldType) {
+function processRawSetting(value: unknown, fieldType: SettingFieldType) {
     switch (fieldType) {
         case "boolean":
             return value === 1;
@@ -39,7 +44,7 @@ function processRawSetting(value: unknown, fieldType: Config.SettingFieldType) {
 async function fetchSetting(
     appName: string,
     fieldName: string,
-    fieldType: Config.SettingFieldType
+    fieldType: SettingFieldType
 ): Promise<unknown> {
     // Check for & return if available
     let setting = DB.settings.get(appName, fieldName);
@@ -73,7 +78,7 @@ async function fetchSetting(
 
 export async function loadConfigurations(
     appName: string,
-    config: Config.Configuration[]
+    config: Configuration[]
 ): Promise<AppConfig> {
     let settings = {} as Record<string, any>;
     let info = {
@@ -82,22 +87,21 @@ export async function loadConfigurations(
 
     for (const cfg of config) {
         switch (cfg.configType) {
-            case Config.ConfigType.Setting:
-                const settingCfg = cfg as Config.SettingsConfiguration;
+            case ConfigType.Setting:
+                const settingCfg = cfg as SettingsConfiguration;
                 settings[settingCfg.fieldName] = await fetchSetting(
                     appName,
                     settingCfg.fieldName,
                     settingCfg.fieldType
                 );
                 break;
-            case Config.ConfigType.Info:
-                const description = (cfg as Config.InfoConfiguration)
-                    .description;
+            case ConfigType.Info:
+                const description = (cfg as InfoConfiguration).description;
                 if (description) {
                     info.description = description.trim();
                 }
 
-            case Config.ConfigType.Permission:
+            case ConfigType.Permission:
                 break;
             default:
                 throw new Error(
