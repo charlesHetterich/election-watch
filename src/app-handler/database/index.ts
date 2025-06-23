@@ -1,36 +1,40 @@
+import { existsSync, mkdirSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import DB from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { join } from "path";
-import { existsSync, mkdirSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname } from "path";
-import { settings } from "./schema";
 import { eq } from "drizzle-orm";
 
+import { settings } from "./schema";
+
+/**
+ * Store migrations in this directory
+ */
 const MIGRATIONS_DIR = `${dirname(fileURLToPath(import.meta.url))}/migrations`;
-const DB_DIR = join(process.cwd(), "bin");
 
-// Open database connection
-if (!existsSync(DB_DIR)) mkdirSync(DB_DIR, { recursive: true });
-const raw_db = new DB(join(DB_DIR, "sl_database.db"));
-const db = drizzle(raw_db);
+/**
+ * Store database inside of bin
+ */
+const DB_FILE = join(process.cwd(), "bin", "sl_database.db");
 
-// Update table structures if new migrations are available
-await migrate(db, {
-    migrationsFolder: MIGRATIONS_DIR,
-});
+// Open database connection & update table structures
+// if new migrations are available
+if (!existsSync(dirname(DB_FILE)))
+    mkdirSync(dirname(DB_FILE), { recursive: true });
+const db = drizzle(new DB(DB_FILE));
+await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
 
 /**
  * Used to interface with Substrate Lambdas internal database
  */
 export default {
     /**
-     * Table storing settings for each application
+     * Interface to interact with {@link settings} table
      */
     settings: {
         /**
-         * Get a setting value
+         * Get a setting value from database
          */
         get(
             app: typeof settings.$inferInsert.appName,
@@ -47,7 +51,7 @@ export default {
         },
 
         /**
-         * Set a setting value
+         * Set a setting value in database
          */
         async set(row: typeof settings.$inferInsert) {
             await db

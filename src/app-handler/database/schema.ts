@@ -18,10 +18,7 @@ export const settings = sqliteTable(
         }).notNull(),
         value: blob("value", { mode: "json" }).notNull(),
     },
-    (t) => [
-        primaryKey({ columns: [t.appName, t.fieldName] }),
-        index("idx_settings_app").on(t.appName),
-    ]
+    (t) => [primaryKey({ columns: [t.appName, t.fieldName] })]
 );
 
 export const logs = sqliteTable(
@@ -32,5 +29,5 @@ export const logs = sqliteTable(
         app: text("app").notNull(),
         content: text("content").notNull(),
     },
-    (t) => [index("idx_logs_app_ts").on(t.app, desc(t.timestamp))]
+    (t) => [index("idx_logs_app_desc(timestamp)").on(t.app, desc(t.timestamp))]
 );
