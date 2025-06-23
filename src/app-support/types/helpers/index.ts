@@ -3,7 +3,7 @@ export * from "./field-names";
 /**
  * We like to display error messages in favor of giving `never`
  */
-export type TypeErrorMessage<S extends string> = {
+export type TypeErrorMessage<S extends string = string> = {
     msg: S;
 };
 

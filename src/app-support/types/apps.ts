@@ -98,8 +98,8 @@ export type TApp<AppM extends AppModule<any, any>> = {
             RTrigger: ReturnType<AppM["routes"][K]["trigger"]>;
         };
     };
-    Context: AppM extends AppModule<infer WLss, infer _>
-        ? Context<WLss[number][number]["chain"]>
+    Context: AppM extends AppModule<infer WLss, infer Config>
+        ? Context<WLss[number][number]["chain"], Config>
         : never;
 };
 
@@ -154,9 +154,52 @@ if (import.meta.vitest) {
         );
     });
 
+    test("`App` function correctly propagates settings configurations through context", () => {
+        App(
+            [
+                Config.Description("test"),
+                Config.Setting.string("email"),
+                Config.Setting.secret("password"),
+                Config.Setting.bool("enabled"),
+                Config.Setting.number("frequency"),
+                Config.Permission("write-file"),
+            ],
+            {
+                watching: Observables.event.polkadot.Bounties.BountyProposed(),
+                trigger: (_, c) => {
+                    expectTypeOf<typeof c.settings>().toEqualTypeOf<{
+                        readonly email: string;
+                        readonly password: string;
+                        readonly enabled: boolean;
+                        readonly frequency: number;
+                    }>();
+                    return true;
+                },
+                lambda: (_, __) => {},
+            },
+            {
+                watching:
+                    Observables.event.rococoV2_2.Bounties.BountyProposed(),
+                trigger: (_, __) => true,
+                lambda: (_, c) => {
+                    expectTypeOf<typeof c.settings>().toEqualTypeOf<{
+                        readonly email: string;
+                        readonly password: string;
+                        readonly enabled: boolean;
+                        readonly frequency: number;
+                    }>();
+                },
+            }
+        );
+    });
+
     test("`TApp` correctly organizes types extracted from an `AppModule` instance", () => {
         const app = App(
-            [Config.Description("test")],
+            [
+                Config.Description("test"),
+                Config.Setting.string("email"),
+                Config.Setting.secret("password"),
+            ],
             {
                 watching: Observables.event.polkadot.Bounties.BountyProposed(),
                 trigger: (_, c) => true,
@@ -177,9 +220,16 @@ if (import.meta.vitest) {
         expectTypeOf<A["Routes"]["1"]["Payload"]>().toEqualTypeOf<
             D.Rococo_v2_2Events["Bounties"]["BountyProposed"]
         >();
-        expectTypeOf<A["Context"]["apis"]>().toEqualTypeOf<{
-            polkadot: TypedApi<(typeof D)["polkadot"]>;
-            rococoV2_2: TypedApi<(typeof D)["rococo_v2_2"]>;
+        type dddd = A["Context"]["settings"];
+        expectTypeOf<A["Context"]>().toEqualTypeOf<{
+            apis: {
+                polkadot: TypedApi<(typeof D)["polkadot"]>;
+                rococoV2_2: TypedApi<(typeof D)["rococo_v2_2"]>;
+            };
+            settings: {
+                readonly email: string;
+                readonly password: string;
+            };
         }>();
     });
 }

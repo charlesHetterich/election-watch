@@ -69,3 +69,22 @@ export default {
         },
     },
 };
+
+if (import.meta.vitest) {
+    const { describe, it } = import.meta.vitest;
+
+    /**
+     * Have to setup mock database & migrations locations...
+     *
+     * Not sure how testing migrations should work
+     * while keeping the tests up-to-date
+     */
+
+    it.todo("test using existing database works", () => {});
+    it.todo("test creating new database works", () => {});
+    it.todo("test migration updates work", () => {});
+
+    describe("settings", () => {
+        it.todo("test `settings` interface works", () => {});
+    });
+}

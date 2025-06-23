@@ -119,3 +119,9 @@ export async function loadConfigurations(
         settings: settings,
     };
 }
+
+if (import.meta.vitest) {
+    const { describe, it } = import.meta.vitest;
+
+    it.todo("...", () => {});
+}

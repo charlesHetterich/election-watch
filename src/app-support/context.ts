@@ -39,3 +39,7 @@ export class Context<
         public settings: Expand<ContextualSettings<Config>>
     ) {}
 }
+
+/**
+ * Tests coverage handled in `types/apps`
+ */

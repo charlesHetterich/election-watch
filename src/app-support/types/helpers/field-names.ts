@@ -52,3 +52,24 @@ type IsValidField<S extends string> = S extends `${FirstChar}${infer Tail}`
 export type ValidField<S extends string> = IsValidField<S> extends true
     ? S
     : TypeErrorMessage<"Setting field name must contain only letters, digits, or '_' and cannot start with a digit">;
+
+if (import.meta.vitest) {
+    const { expectTypeOf, describe, it } = import.meta.vitest;
+
+    describe("`IsValidField`", () => {
+        it("gives back exact string on strings of valid variable names", () => {
+            expectTypeOf<ValidField<"someVar">>().toExtend<"someVar">();
+            expectTypeOf<ValidField<"__weird_var">>().toExtend<"__weird_var">();
+            expectTypeOf<ValidField<"someVar2">>().toExtend<"someVar2">();
+        });
+
+        it("gives a `TypeErrorMessage` on strings of invalid variable names", () => {
+            expectTypeOf<
+                ValidField<"2noLettersAtStart">
+            >().toExtend<TypeErrorMessage>();
+            expectTypeOf<
+                ValidField<"noWeirdChars!">
+            >().toExtend<TypeErrorMessage>();
+        });
+    });
+}
