@@ -1,6 +1,7 @@
 import {
     ConfigType,
     Configuration,
+    FieldType,
     InfoConfiguration,
     SettingFieldType,
     SettingsConfiguration,
@@ -12,7 +13,6 @@ import DB from "./database";
 /**
  * ## AppConfig
  * Holds all application-wide configurations.
- *
  */
 export type AppConfig = Expand<
     Required<
@@ -22,15 +22,19 @@ export type AppConfig = Expand<
     >
 >;
 
-function processRawSetting(value: unknown, fieldType: SettingFieldType) {
+/**
+ * Converts raw text input to the appropriate setting
+ */
+function processRawSetting(value: string, fieldType: SettingFieldType) {
     switch (fieldType) {
-        case "boolean":
-            return value === 1;
-        case "number":
+        case FieldType.Bool:
+            const truthies = ["1", "true", "yes", "y"];
+            return truthies.includes(value.toLowerCase());
+        case FieldType.Number:
             return Number(value);
-        case "string":
+        case FieldType.String:
             return String(value);
-        case "secret":
+        case FieldType.Secret:
             return String(value);
         default:
             throw new Error(`Unknown field type: ${fieldType}`);
@@ -38,21 +42,20 @@ function processRawSetting(value: unknown, fieldType: SettingFieldType) {
 }
 
 /**
- * Prompts the user for input via the console.
- * For "secret" type, input is hidden.
+ * Get the value for some setting in an app.
  */
 async function fetchSetting(
     appName: string,
     fieldName: string,
     fieldType: SettingFieldType
 ): Promise<unknown> {
-    // Check for & return if available
+    // Check for setting in DB & return if available
     let setting = DB.settings.get(appName, fieldName);
     if (setting !== undefined) {
         return setting;
     }
 
-    // Capture input from user
+    // Otherwise, prompt user via console for setting value
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -62,11 +65,9 @@ async function fetchSetting(
         rl.question(`Enter value for "${fieldName}" (${fieldType}): `, resolve)
     );
     rl.close();
-
-    // Convert user input to the correct type
     setting = processRawSetting(input, fieldType);
 
-    // Add setting to database
+    // Store setting in DB & return
     DB.settings.set({
         appName: appName,
         fieldName: fieldName,
@@ -76,6 +77,9 @@ async function fetchSetting(
     return setting;
 }
 
+/**
+ * Load all {@link Configuration}s specified by the given app.
+ */
 export async function loadConfigurations(
     appName: string,
     config: Configuration[]

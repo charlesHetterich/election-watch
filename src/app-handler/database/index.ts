@@ -35,6 +35,9 @@ export default {
     settings: {
         /**
          * Get a setting value from database
+         *
+         * @param app   - The name of the application which owns the setting
+         * @param field - The variable name for the setting
          */
         get(
             app: typeof settings.$inferInsert.appName,
@@ -52,6 +55,8 @@ export default {
 
         /**
          * Set a setting value in database
+         *
+         * @param row - A setting to insert/update
          */
         async set(row: typeof settings.$inferInsert) {
             await db
