@@ -104,7 +104,7 @@ export async function loadConfigurations(
                 if (description) {
                     info.description = description.trim();
                 }
-
+                break;
             case ConfigType.Permission:
                 break;
             default:
