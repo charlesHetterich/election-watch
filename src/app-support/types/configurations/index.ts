@@ -40,6 +40,8 @@ type ConfigInterface = {
 };
 
 /**
+ * ## Config
+ *
  * Interface to specify app {@link Configuration}s inside of the first
  * argument of the {@link App} function.
  *
