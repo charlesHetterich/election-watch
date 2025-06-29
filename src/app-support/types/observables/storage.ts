@@ -4,7 +4,7 @@ import * as D from "@polkadot-api/descriptors";
 import { Expand } from "../helpers";
 import { FromVirtual, VirtualChainId } from "../known-chains";
 import { FuncTree, WatchLeaf } from ".";
-import { AppRpc } from "@lambdas/app-handler/rpc";
+import { AppRpc, VirtualRpc } from "@lambdas/app-handler/rpc";
 
 export const name = "storage";
 
@@ -68,7 +68,7 @@ export function handleLeaf(
     },
     leaf: WatchLeaf,
     nArgs: number,
-    appRpc: AppRpc,
+    appRpc: VirtualRpc<AppRpc>,
     routeId: number
 ): Subscription {
     return (

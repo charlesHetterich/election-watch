@@ -90,7 +90,7 @@ export function narrowPayload<T extends WatchLeaf>(
  */
 export async function processPayload<WLs extends WatchLeaf[]>(
     payload: PossiblePayload<WLs>,
-    context: Context<WLs[number]["chain"]>,
+    context: Context,
     trigger: Route<WLs>["trigger"],
     lambda: Route<WLs>["lambda"]
 ) {

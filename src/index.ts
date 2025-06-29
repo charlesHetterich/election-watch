@@ -1,5 +1,5 @@
 import path from "path";
-import { AppsManager, loadApps } from "./app-handler";
+import { AppsManager, startApps } from "./app-handler";
 import { SUBSTRATE_LAMBDAS } from "./titles";
 
 const appsDir = path.join(process.cwd(), "src/apps");
@@ -9,8 +9,7 @@ async function main() {
 
     // Load & launch all apps
     const manager = new AppsManager();
-    await loadApps(appsDir, manager);
-    await manager.launch();
+    await startApps(appsDir, manager);
 }
 
 main().catch((error) => console.error("Error:", error));

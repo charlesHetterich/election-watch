@@ -4,7 +4,7 @@ import * as D from "@polkadot-api/descriptors";
 import { Expand } from "../helpers";
 import { FromVirtual, VirtualChainId } from "../known-chains";
 import { FuncTree, LeafFunction, WatchLeaf } from ".";
-import { AppRpc } from "@lambdas/app-handler/rpc";
+import { AppRpc, VirtualRpc } from "@lambdas/app-handler/rpc";
 
 export const name = "event";
 
@@ -71,7 +71,7 @@ export function handleLeaf(
         watch: () => Observable<any>;
     },
     leaf: WatchLeaf,
-    appRpc: AppRpc,
+    appRpc: VirtualRpc<AppRpc>,
     routeId: number
 ): Subscription {
     return watchable.watch().subscribe((data: any) => {

@@ -1,139 +1,46 @@
 import fs from "fs";
 import path from "path";
-import { Subscription } from "rxjs";
-
-import {
-    Context,
-    WatchLeaf,
-    AppModule,
-    Route,
-    ROOTS,
-} from "@lambdas/app-support";
-import { LambdaApp, RouteHandler, WatchType } from "./app";
+import { spawn } from "child_process";
+import { LambdaApp } from "./app";
 import { AppsManager } from "./manager";
-import { loadConfigurations } from "./configurations";
 
 /**
- * Creates a route handler from a route and an API
+ * Start all apps from the `appsDir` directory
  */
-async function handlerFromRoute(
-    route: Route,
-    manager: AppsManager
-): Promise<RouteHandler> {
-    let leafHandlers: ((context: Context) => [WatchLeaf, Subscription])[] = [];
-    for (const leaf of route.watching) {
-        const path_arr = leaf.path.split(".");
+export async function startApps(appsDir: string, manager: AppsManager) {
+    const HOST_PORT = "7001";
 
-        // Start at the top this chain's API/Codec, and then
-        // traverse properties to the desired observable value
-        let watchable: any = await manager.getAPI(leaf.chain);
-        let codec: any = await manager.getCodec(leaf.chain);
-        for (const pth of path_arr) {
-            watchable = watchable[pth == WatchType.STORAGE ? "query" : pth];
-            codec = codec[pth == WatchType.STORAGE ? "query" : pth];
-        }
-
-        // Configure route handler
-        switch (path_arr[0]) {
-            case WatchType.EVENT:
-                leafHandlers.push((context: Context) => [
-                    leaf,
-                    ROOTS.event.handleLeaf(
-                        watchable,
-                        route.trigger,
-                        route.lambda,
-                        leaf
-                    )(context),
-                ]);
-                break;
-            case WatchType.STORAGE:
-                const nArgs: number = codec.args.inner.length;
-                leafHandlers.push((context: Context) => [
-                    leaf,
-                    ROOTS.storage.handleLeaf(
-                        watchable,
-                        route.trigger,
-                        route.lambda,
-                        leaf,
-                        nArgs
-                    )(context),
-                ]);
-                break;
-            default:
-                throw new Error(
-                    `Invalid \`Observables\` route on chain ${leaf.chain} with path ${path_arr}. Must start with "event" or "query".`
-                );
-        }
-    }
-
-    // Collect all leaf handlers into a single
-    // "batch" handler that calls all leaf handlers
-    return (context: Context) =>
-        leafHandlers.map((handler) => handler(context));
-}
-
-/**
- * Try to load a `LambdaApp` from module given by `appName`. If any handler fails
- * to load, we consider the entire app to be failed.
- *
- * Both successful & failed apps are added to `manager`
- */
-async function loadApp(
-    appsDir: string,
-    appName: string,
-    manager: AppsManager
-): Promise<LambdaApp> {
-    let app = new LambdaApp(appName);
-    try {
-        // Load & expect `TAppModule`
-        const appModule = (
-            await import(path.join(appsDir, appName, "index.ts"))
-        ).default as AppModule;
-
-        app.config = await loadConfigurations(appName, appModule.config);
-        app.chains = appModule.routes
-            .map((route) => route.watching.map((leaf) => leaf.chain))
-            .flat()
-            .reduce((acc: Record<string, number>, chain: string) => {
-                acc[chain] = (acc[chain] || 0) + 1;
-                return acc;
-            }, {});
-        app.handlers = await Promise.all(
-            appModule.routes.map(
-                async (route) => await handlerFromRoute(route, manager)
-            )
-        );
-    } catch (e: any) {
-        // Mark the app as dead if any errors occur
-        app.alive = false;
-        app.logs.push(`Error loading ${appName}: ${e.stack}`);
-    }
-
-    // Add the app to the manager
-    manager.apps.push(app);
-    return app;
-}
-
-/**
- * Load all apps from the `appsDir` directory
- *
- * @returns `AppsManager` containing all apps
- */
-export async function loadApps(appsDir: string, manager: AppsManager) {
-    let apps: LambdaApp[] = [];
+    // Find all apps in `appsDir`
+    let appNames: string[];
     if (fs.existsSync(appsDir)) {
-        // Find all apps in `appsDir`
-        const appNames = fs
+        appNames = fs
             .readdirSync(appsDir, { withFileTypes: true })
             .filter((dir) => dir.isDirectory() && !dir.name.startsWith("_"))
             .map((dirent) => dirent.name);
-
-        // Load all apps
-        apps = await Promise.all(
-            appNames.map((appName) => loadApp(appsDir, appName, manager))
-        );
     } else {
         throw new Error(`Apps directory ${appsDir} not found.`);
+    }
+
+    // Start each app inside its own Deno container
+    for (const appName of appNames) {
+        const token = appName;
+        manager.apps[token] = new LambdaApp(appName);
+        const p = spawn(
+            "deno",
+            [
+                "run",
+                "--quiet",
+                `--allow-net=127.0.0.1:${HOST_PORT}`,
+                "--no-prompt",
+                path.join(appsDir, appName, "index.ts"),
+            ],
+            {
+                stdio: ["ignore", "pipe", "pipe"],
+                env: { ...process.env, HOST_PORT, SESSION_TOKEN: token },
+            }
+        );
+
+        // TODO! capture logs from `p` into DB
     }
 }
 
@@ -143,20 +50,20 @@ if (import.meta.vitest) {
 
     test("should throw an error on non-existed appsDir", async () => {
         await expect(() =>
-            loadApps("invalid-path", new AppsManager())
+            startApps("invalid-path", new AppsManager())
         ).rejects.toBeDefined();
     });
 
     test("should find apps in valid `appsDir` correctly", async () => {
         const manager = new AppsManager();
-        await loadApps(appsDir, manager);
+        await startApps(appsDir, manager);
         expect(manager["apps"].map((app) => app.name)).toContain("no-index");
     });
 
     test("should load all valid/invalid apps correctly", async () => {
         const manager = new AppsManager();
         // Load all apps
-        await loadApps(appsDir, manager);
+        await startApps(appsDir, manager);
         const apps = manager["apps"].reduce((acc, app) => {
             acc[app.name] = app;
             return acc;

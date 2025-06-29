@@ -23,16 +23,8 @@ export type ContextualSettings<Config extends readonly Configuration[]> = {
 /**
  * Provides system context to lambda apps
  */
-export class Context<
-    Ids extends ChainId = ChainId,
-    Config extends readonly Configuration[] = []
-> {
+export class Context<Config extends readonly Configuration[] = []> {
     constructor(
-        /**
-         * These are the APIs
-         */
-        public apis: Expand<ContextualAPIs<Ids>>,
-
         /**
          * These are the settings for the app.
          */

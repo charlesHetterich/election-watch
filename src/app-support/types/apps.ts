@@ -1,5 +1,8 @@
+import WebSocket from "ws";
 import * as D from "@polkadot-api/descriptors";
 
+import { AppRpc, HostRpc, RpcPeer } from "@lambdas/app-handler/rpc";
+import { Expand } from "./helpers";
 import { PossiblePayload } from "./payload";
 import { WatchLeaf } from "./observables";
 import { Context } from "../context";
@@ -33,7 +36,7 @@ export type Route<
      */
     trigger: (
         payload: PossiblePayload<WLs>,
-        context: Expand<Context<WLss[number][number]["chain"], Config>>
+        context: Expand<Context<Config>>
     ) => boolean | Promise<boolean>;
 
     /**
@@ -43,7 +46,7 @@ export type Route<
      */
     lambda: (
         payload: PossiblePayload<WLs>,
-        context: Expand<Context<WLss[number][number]["chain"], Config>>
+        context: Expand<Context<Config>>
     ) => void | Promise<void>;
 };
 
@@ -58,20 +61,42 @@ export interface AppModule<
     routes: { [K in keyof WLss]: Route<WLss[K], WLss, Config> };
 }
 
+async function connectToHost(app: AppModule<any, any>) {
+    // NOTE: This code runs inside of the deno-containerized application.
+    //       Host always launches with the given environment variables set.
+    const hostPort = process.env.HOST_PORT!;
+    const token = process.env.SESSION_TOKEN!;
+
+    // Create RPC connection to Host
+    const ws = new WebSocket(`ws://127.0.0.1:${hostPort}?token=${token}`);
+    await new Promise((r) => (ws.onopen = r));
+    const peer = new RpcPeer(ws, HostRpc.prototype);
+
+    // Register with host & fetch settings
+    const settings = await peer.awayRpc.register(
+        app.config,
+        app.routes.map((r) => r.watching)
+    );
+
+    peer.homeRpc = new AppRpc(new Context(settings), app);
+}
+
 /**
  * Convenience builder function for specifying a lambda `TAppModule` with built-in type hints.
  */
-export function App<
-    const WLss extends readonly WatchLeaf[][],
-    const Config extends readonly Config.Configuration[]
+export async function App<
+    const Config extends Config.Configuration[],
+    const WLss extends readonly WatchLeaf[][]
 >(
     config: Config,
     ...routes: { [K in keyof WLss]: Route<WLss[K], WLss, Config> }
-): AppModule<WLss, Config> {
-    return {
+): Promise<AppModule<WLss, Config>> {
+    const app: AppModule<WLss, Config> = {
         config,
         routes,
     };
+    connectToHost(app);
+    return app;
 }
 
 /**
@@ -99,12 +124,11 @@ export type TApp<AppM extends AppModule<any, any>> = {
         };
     };
     Context: AppM extends AppModule<infer WLss, infer Config>
-        ? Context<WLss[number][number]["chain"], Config>
+        ? Context<Config>
         : never;
 };
 
 import type { TypedApi } from "polkadot-api";
-import { Expand } from "./helpers";
 if (import.meta.vitest) {
     const { test, expectTypeOf } = import.meta.vitest;
     const { Observables } = await import("./observables");

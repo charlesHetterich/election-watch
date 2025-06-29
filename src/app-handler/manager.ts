@@ -5,41 +5,57 @@ import { createClient, getTypedCodecs, TypedApi } from "polkadot-api";
 import * as D from "@polkadot-api/descriptors";
 import * as chains from "polkadot-api/chains";
 
-import {
-    ChainId,
-    Context,
-    ContextualAPIs,
-    RelayId,
-    toVirtual,
-    getRelayId,
-    isRelay,
-} from "@lambdas/app-support";
+import { ChainId, RelayId, getRelayId, isRelay } from "@lambdas/app-support";
 import { LambdaApp } from "./app";
+import { WebSocketServer } from "ws";
+import { RpcPeer, HostRpc, AppRpc, VirtualRpc } from "./rpc";
 
 /**
  * Handles overarching app logic & management
  *
+ * @property rpc         - Map app session token to RPC connection
  * @property lightClient - A smoldot light client
  * @property relayChains - Relay chains supporting apps for this manager
  * @property apis        - The collection of `TypedAPI`s being used across all apps
  * @property apps        - The list of apps to manage
  */
 export class AppsManager {
+    private appRpcs = {} as Record<string, VirtualRpc<AppRpc>>;
     private lightClient: Client;
     private relayChains = {} as Record<RelayId, Chain>;
     private codecs = {} as Record<ChainId, any>;
     public apis = {} as Record<ChainId, TypedApi<(typeof D)[ChainId]>>;
-    public apps: LambdaApp[] = [];
+    public apps = {} as Record<string, LambdaApp>;
 
-    constructor() {
+    constructor(rpcPort = 7001) {
         this.lightClient = start();
+        const wss = new WebSocketServer({ port: rpcPort });
+        wss.on("connection", (ws, req) => {
+            const token = new URL(req.url!, "ws://host").searchParams.get(
+                "token"
+            );
+
+            // Ignore unrecognized connections
+            let app: LambdaApp;
+            if (token && token in this.apps) {
+                app = this.apps[token];
+            } else {
+                ws.close(1008, "Invalid token");
+                return;
+            }
+
+            // Establish RPC
+            const peer = new RpcPeer(ws, AppRpc.prototype);
+            this.appRpcs[token] = peer.awayRpc;
+            peer.homeRpc = new HostRpc(this, app, peer.awayRpc);
+        });
     }
 
     /**
      *
      */
     public async shutdown() {
-        this.apps.forEach((app) => app.shutdown());
+        Object.values(this.apps).forEach((app) => app.shutdown());
         await this.lightClient.terminate();
     }
 
@@ -131,28 +147,6 @@ export class AppsManager {
         );
         console.log(app.config.settings);
         console.log("\n" + chalk.grey(app.config.description) + "\n\n");
-    }
-
-    launch() {
-        console.log(
-            "\n" + chalk.yellowBright.bold("Building & launching apps")
-        );
-
-        // Launch all apps
-        this.apps.forEach((app) => {
-            this.logLaunchStatus(app);
-            if (app.alive) {
-                const context = new Context(
-                    Object.fromEntries(
-                        (Object.keys(app.chains) as ChainId[]).map(
-                            (cid) => [toVirtual(cid), this.apis[cid]] as const
-                        )
-                    ) as ContextualAPIs<ChainId>,
-                    app.config.settings
-                );
-                app.launch(context);
-            }
-        });
     }
 }
 

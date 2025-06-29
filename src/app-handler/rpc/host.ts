@@ -27,7 +27,6 @@ export class HostRpc {
                 return acc;
             }, {});
 
-        let leafHandlers: (() => [WatchLeaf, Subscription])[] = [];
         observables.forEach(async (leaves, idx) => {
             for (const leaf of leaves) {
                 const path_arr = leaf.path.split(".");
@@ -42,37 +41,38 @@ export class HostRpc {
                     codec = codec[pth == WatchType.STORAGE ? "query" : pth];
                 }
 
-                // Configure route handler
+                // Start subscription based on observable
+                let sub: Subscription;
                 switch (path_arr[0]) {
                     case WatchType.EVENT:
-                        leafHandlers.push(() => [
+                        sub = ROOTS.event.handleLeaf(
+                            watchable,
                             leaf,
-                            ROOTS.event.handleLeaf(
-                                watchable,
-                                leaf,
-                                this.appRpc,
-                                idx
-                            ),
-                        ]);
+                            this.appRpc,
+                            idx
+                        );
                         break;
                     case WatchType.STORAGE:
                         const nArgs: number = codec.args.inner.length;
-                        leafHandlers.push(() => [
+                        sub = ROOTS.storage.handleLeaf(
+                            watchable,
                             leaf,
-                            ROOTS.storage.handleLeaf(
-                                watchable,
-                                leaf,
-                                nArgs,
-                                this.appRpc,
-                                idx
-                            ),
-                        ]);
+                            nArgs,
+                            this.appRpc,
+                            idx
+                        );
                         break;
                     default:
                         throw new Error(
                             `Invalid \`Observables\` route on chain ${leaf.chain} with path ${path_arr}. Must start with "event" or "query".`
                         );
                 }
+
+                // Keep pointer to subscription in Lambda app
+                this.app.subscriptions.set(leaf, sub);
+                sub.add(() => {
+                    this.app.subscriptions.delete(leaf);
+                });
             }
         });
         this.app.alive = true;
