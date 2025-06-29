@@ -2,11 +2,9 @@ import { Observable, Subscription } from "rxjs";
 import * as D from "@polkadot-api/descriptors";
 
 import { Expand } from "../helpers";
-import { ChainId, FromVirtual, VirtualChainId } from "../known-chains";
+import { FromVirtual, VirtualChainId } from "../known-chains";
 import { FuncTree, LeafFunction, WatchLeaf } from ".";
-import { Context } from "@lambdas/app-support/context";
-import { processPayload } from "../payload";
-import { Route } from "../apps";
+import { AppRpc } from "@lambdas/app-handler/rpc";
 
 export const name = "event";
 
@@ -72,20 +70,18 @@ export function handleLeaf(
     watchable: {
         watch: () => Observable<any>;
     },
-    trigger: Route["trigger"],
-    lambda: Route["lambda"],
-    leaf: WatchLeaf
-): (context: Context) => Subscription {
-    return (context) => {
-        return watchable.watch().subscribe((data: any) => {
-            const payload = {
-                ...data.payload,
-                __meta: {
-                    chain: leaf.chain,
-                    path: leaf.path,
-                },
-            };
-            processPayload(payload, context, trigger, lambda);
-        });
-    };
+    leaf: WatchLeaf,
+    appRpc: AppRpc,
+    routeId: number
+): Subscription {
+    return watchable.watch().subscribe((data: any) => {
+        const payload = {
+            ...data.payload,
+            __meta: {
+                chain: leaf.chain,
+                path: leaf.path,
+            },
+        };
+        appRpc.pushPayload(routeId, payload);
+    });
 }

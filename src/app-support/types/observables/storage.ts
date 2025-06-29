@@ -2,11 +2,9 @@ import { Subscription, Observable } from "rxjs";
 import * as D from "@polkadot-api/descriptors";
 
 import { Expand } from "../helpers";
-import { ChainId, FromVirtual, VirtualChainId } from "../known-chains";
+import { FromVirtual, VirtualChainId } from "../known-chains";
 import { FuncTree, WatchLeaf } from ".";
-import { Context } from "@lambdas/app-support/context";
-import { processPayload } from "../payload";
-import { Route } from "../apps";
+import { AppRpc } from "@lambdas/app-handler/rpc";
 
 export const name = "storage";
 
@@ -68,13 +66,13 @@ export function handleLeaf(
         watchEntries: (...args: any[]) => Observable<any>;
         watchValue: (...args: any[]) => Observable<any>;
     },
-    trigger: Route["trigger"],
-    lambda: Route["lambda"],
     leaf: WatchLeaf,
-    nArgs: number
-): (context: Context<ChainId>) => Subscription {
-    return (context) =>
-        (leaf.args.length < nArgs
+    nArgs: number,
+    appRpc: AppRpc,
+    routeId: number
+): Subscription {
+    return (
+        leaf.args.length < nArgs
             ? leaf.options.finalized == false
                 ? watchable.watchEntries(...leaf.args, { at: "best" })
                 : watchable.watchEntries(...leaf.args)
@@ -82,27 +80,27 @@ export function handleLeaf(
                   ...leaf.args,
                   leaf.options.finalized ? "finalized" : "best"
               )
-        ).subscribe((payload: any) => {
-            // Normalize payload structures from `watchEntries` and `watchValue`
-            let _payload: { args: any; value: any }[];
-            if (payload.entries) {
-                _payload = payload.entries;
-            } else {
-                _payload = [{ args: leaf.args, value: payload }];
-            }
+    ).subscribe((payload: any) => {
+        // Normalize payload structures from `watchEntries` and `watchValue`
+        let _payload: { args: any; value: any }[];
+        if (payload.entries) {
+            _payload = payload.entries;
+        } else {
+            _payload = [{ args: leaf.args, value: payload }];
+        }
 
-            const refinedPayloads = _payload.map((p) => {
-                return {
-                    key: p.args,
-                    value: p.value,
-                    __meta: {
-                        chain: leaf.chain,
-                        path: leaf.path,
-                    },
-                };
-            });
-            for (const p of refinedPayloads) {
-                processPayload(p, context, trigger, lambda);
-            }
+        const refinedPayloads = _payload.map((p) => {
+            return {
+                key: p.args,
+                value: p.value,
+                __meta: {
+                    chain: leaf.chain,
+                    path: leaf.path,
+                },
+            };
         });
+        for (const p of refinedPayloads) {
+            appRpc.pushPayload(routeId, p);
+        }
+    });
 }
