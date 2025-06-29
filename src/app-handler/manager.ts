@@ -12,6 +12,7 @@ import { ChainId, RelayId, getRelayId, isRelay } from "@lambdas/app-support";
 import { LambdaApp } from "./app";
 import { WebSocketServer } from "ws";
 import { RpcPeer, HostRpc, AppRpc, VirtualRpc } from "./rpc";
+import DB from "./database";
 
 /**
  * Handles overarching app logic & management
@@ -123,9 +124,9 @@ export class AppsManager {
             console.log(
                 "\n" + "[" + chalk.red("x") + "]  " + chalk.bgRed(app.name)
             );
-            app.logs.forEach((l) =>
-                console.log("[" + chalk.red("Error") + "] " + l)
-            );
+            // app.logs.forEach((l) =>
+            //     console.log("[" + chalk.red("Error") + "] " + l)
+            // );
             return;
         }
         console.log(
@@ -171,6 +172,8 @@ export class AppsManager {
         for (const appName of appNames) {
             const token = appName;
             this.apps[token] = new LambdaApp(appName);
+
+            // Launch app
             const p = spawn(
                 "deno",
                 [
@@ -190,7 +193,21 @@ export class AppsManager {
                 }
             );
 
-            // TODO! capture logs from `p` into DB
+            // Pipe app logs to database
+            const wireStream = (s: NodeJS.ReadableStream, isErr: boolean) => {
+                const flush = (text: string) => {
+                    DB.logs.push(appName, text);
+
+                    // mirror to console, but **don’t touch** the app’s colours
+                    const tag = chalk.cyan(`[${appName}]`);
+                    console.log(
+                        isErr ? chalk.red(tag) + " " + text : tag + " " + text
+                    );
+                };
+                s.on("data", flush);
+            };
+            wireStream(p.stdout!, false);
+            wireStream(p.stderr!, true);
         }
     }
 }

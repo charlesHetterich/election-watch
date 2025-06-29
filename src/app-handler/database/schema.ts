@@ -29,5 +29,5 @@ export const logs = sqliteTable(
         app: text("app").notNull(),
         content: text("content").notNull(),
     },
-    (t) => [index("idx_logs_app_desc(timestamp)").on(t.app, desc(t.timestamp))]
+    (t) => [index("idx_logs_app_ts_desc").on(t.app, desc(t.timestamp))]
 );

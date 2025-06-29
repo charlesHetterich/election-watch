@@ -4,9 +4,9 @@ import { fileURLToPath } from "url";
 import DB from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
-import { settings } from "./schema";
+import { logs, settings } from "./schema";
 
 /**
  * Store migrations in this directory
@@ -66,6 +66,30 @@ export default {
                     target: [settings.appName, settings.fieldName],
                     set: { value: row.value, fieldType: row.fieldType },
                 });
+        },
+    },
+
+    logs: {
+        /**
+         * Write logs to the logs table.
+         * `timestamp` defaults to `Date.now()`.
+         */
+        push(app: string, content: string, timestamp = Date.now()) {
+            db.insert(logs).values({ timestamp, app, content }).run();
+        },
+
+        /**
+         * Get paginated logs of an app
+         */
+        getPaged(appId: string, page = 0, perPage = 100) {
+            return db
+                .select()
+                .from(logs)
+                .where(eq(logs.app, appId))
+                .orderBy(desc(logs.timestamp))
+                .limit(perPage)
+                .offset(page * perPage)
+                .all();
         },
     },
 };
