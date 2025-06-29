@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import { spawn } from "child_process";
 import chalk from "chalk";
 import { Chain, Client, start } from "polkadot-api/smoldot";
 import { getSmProvider } from "polkadot-api/sm-provider";
@@ -27,9 +30,9 @@ export class AppsManager {
     public apis = {} as Record<ChainId, TypedApi<(typeof D)[ChainId]>>;
     public apps = {} as Record<string, LambdaApp>;
 
-    constructor(rpcPort = 7001) {
+    constructor(private rpcPort = 7001) {
         this.lightClient = start();
-        const wss = new WebSocketServer({ port: rpcPort });
+        const wss = new WebSocketServer({ port: this.rpcPort });
         wss.on("connection", (ws, req) => {
             const token = new URL(req.url!, "ws://host").searchParams.get(
                 "token"
@@ -147,6 +150,48 @@ export class AppsManager {
         );
         console.log(app.config.settings);
         console.log("\n" + chalk.grey(app.config.description) + "\n\n");
+    }
+
+    /**
+     * Start all apps from the `appsDir` directory
+     */
+    startApps(appsDir: string) {
+        // Find all apps in `appsDir`
+        let appNames: string[];
+        if (fs.existsSync(appsDir)) {
+            appNames = fs
+                .readdirSync(appsDir, { withFileTypes: true })
+                .filter((dir) => dir.isDirectory() && !dir.name.startsWith("_"))
+                .map((dirent) => dirent.name);
+        } else {
+            throw new Error(`Apps directory ${appsDir} not found.`);
+        }
+
+        // Start each app inside its own Deno container
+        for (const appName of appNames) {
+            const token = appName;
+            this.apps[token] = new LambdaApp(appName);
+            const p = spawn(
+                "deno",
+                [
+                    "run",
+                    "--quiet",
+                    `--allow-net=127.0.0.1:${this.rpcPort}`,
+                    "--no-prompt",
+                    path.join(appsDir, appName, "index.ts"),
+                ],
+                {
+                    stdio: ["ignore", "pipe", "pipe"],
+                    env: {
+                        ...process.env,
+                        HOST_PORT: `${this.rpcPort}`,
+                        SESSION_TOKEN: token,
+                    },
+                }
+            );
+
+            // TODO! capture logs from `p` into DB
+        }
     }
 }
 
