@@ -7,7 +7,6 @@ export class AppRpc {
         for (const [key, value] of Object.entries(settings)) {
             (this.context.settings as any)[key] = value;
         }
-        console.log("not implemented!");
     }
 
     pushPayload(routeIndex: number, rawPayload: any) {

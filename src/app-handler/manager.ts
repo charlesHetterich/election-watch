@@ -109,7 +109,7 @@ export class AppsManager {
             });
         }
 
-        // Create RPC client for this chain, grab its typed API, & return it
+        // Create Host <--> Chain RPC client for this chain, grab its typed API, & return it
         const newClient = createClient(getSmProvider(newChain));
         this.apis[chainId] = newClient.getTypedApi(descriptor);
         return this.apis[chainId];
