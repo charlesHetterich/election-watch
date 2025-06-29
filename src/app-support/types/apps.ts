@@ -67,18 +67,23 @@ async function connectToHost(app: AppModule<any, any>) {
     const hostPort = process.env.HOST_PORT!;
     const token = process.env.SESSION_TOKEN!;
 
-    // Create RPC connection to Host
+    // Establish App <--> Host RPC
     const ws = new WebSocket(`ws://127.0.0.1:${hostPort}?token=${token}`);
     await new Promise((r) => (ws.onopen = r));
     const peer = new RpcPeer(ws, HostRpc.prototype);
 
     // Register with host & fetch settings
-    const settings = await peer.awayRpc.register(
-        app.config,
-        app.routes.map((r) => r.watching)
-    );
-
-    peer.homeRpc = new AppRpc(new Context(settings), app);
+    peer.awayRpc
+        .register(
+            app.config,
+            app.routes.map((r) => r.watching)
+        )
+        .then((settings) => {
+            peer.homeRpc = new AppRpc(new Context(settings), app);
+        })
+        .catch((err) => {
+            console.error("Failed to connect to host:", err);
+        });
 }
 
 /**

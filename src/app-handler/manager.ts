@@ -47,7 +47,7 @@ export class AppsManager {
                 return;
             }
 
-            // Establish RPC
+            // Establish Host <--> App RPC
             const peer = new RpcPeer(ws, AppRpc.prototype);
             this.appRpcs[token] = peer.awayRpc;
             peer.homeRpc = new HostRpc(this, app, peer.awayRpc);
@@ -109,7 +109,7 @@ export class AppsManager {
             });
         }
 
-        // Create Host <--> Chain RPC client for this chain, grab its typed API, & return it
+        // Create Host <--> `newChain` RPC client, grab & return its typed API
         const newClient = createClient(getSmProvider(newChain));
         this.apis[chainId] = newClient.getTypedApi(descriptor);
         return this.apis[chainId];
